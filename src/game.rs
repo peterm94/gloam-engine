@@ -15,7 +15,7 @@ use web_sys::console::log_1;
 
 #[wasm_bindgen(typescript_custom_section)]
 const SCRIPT: &'static str = r#"
-interface JsGameObject {
+export interface JsGameObject {
     init(): void;
     update(delta: number): void;
 }

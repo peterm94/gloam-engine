@@ -20,27 +20,27 @@ module.exports = {
             TextDecoder: ['text-encoding', 'TextDecoder'],
             TextEncoder: ['text-encoding', 'TextEncoder']
         }),
-        new CopyWebpackPlugin({
-            patterns: [
-                {from: 'web'}]
-        })
+        // new CopyWebpackPlugin({
+        //     patterns: [
+        //         {from: 'web'}]
+        // })
     ],
-    module: {
-        rules: [
-            {
-                test: /index_bg\.js$/,
-                loader: "string-replace-loader",
-                options: {
-                    multiple: [
-                        {search: "import * as __wbg_star0 from 'env';", replace: ""},
-                        {search: "let wasm;", replace: "let wasm; export const set_wasm = (w) => wasm = w;"},
-                        {search: "imports['env'] = __wbg_star0;", replace: "return imports.wbg;"},
-                        {search: "const imports = getImports();", replace: "return getImports();"},
-                    ]
-                }
-            }
-        ]
-    },
+    // module: {
+    //     rules: [
+    //         {
+    //             test: /index_bg\.js$/,
+    //             loader: "string-replace-loader",
+    //             options: {
+    //                 multiple: [
+    //                     {search: "import * as __wbg_star0 from 'env';", replace: ""},
+    //                     {search: "let wasm;", replace: "let wasm; export const set_wasm = (w) => wasm = w;"},
+    //                     {search: "imports['env'] = __wbg_star0;", replace: "return imports.wbg;"},
+    //                     {search: "const imports = getImports();", replace: "return getImports();"},
+    //                 ]
+    //             }
+    //         }
+    //     ]
+    // },
     mode: "production",
     experiments: {
         asyncWebAssembly: true
