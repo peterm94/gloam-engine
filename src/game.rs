@@ -121,9 +121,11 @@ impl Gloam {
 
     // TODO https://webpack.js.org/guides/asset-modules/#resource-assets
     pub fn load_texture(img_data: &str) -> usize {
-        0
+        log_1(&img_data.into());
         // let url = DataUrl::process(img_data).unwrap();
         // let (body, ..) = url.decode_to_vec().unwrap();
+
+        // log_1(&"we loaded a tex".into());
         //
         // let img = image::load_from_memory(&body).unwrap();
         // let img = img.to_rgba8();
@@ -133,6 +135,7 @@ impl Gloam {
         //     unsafe { TEXTURES.len() }
         // });
         // return len - 1;
+        0
     }
 
     pub fn add_object(js_object: JsGameObject) -> usize {

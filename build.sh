@@ -12,8 +12,8 @@ wasm-bindgen target/wasm32-unknown-unknown/release/$PROJECT_NAME.wasm --out-dir 
 sed -i "s/import \* as __wbg_star0 from 'env';//" dist/$PROJECT_NAME.js
 sed -i "s/let wasm;/let wasm; export const set_wasm = (w) => wasm = w;/" dist/$PROJECT_NAME.js
 sed -i "s/imports\['env'\] = __wbg_star0;/return imports.wbg\;/" dist/$PROJECT_NAME.js
-sed -i "s/const imports = getImports();/return getImports();/" dist/$PROJECT_NAME.js
-
+#sed -i "s/const imports = getImports();/return getImports();/" dist/$PROJECT_NAME.js
+sed -i "s/async function init(input) {/async function init(input) { return getImports(); } async function _unusedInit(input) {/" dist/$PROJECT_NAME.js
 # package json
 PACKAGE=$(cat <<- END
 {
