@@ -9,28 +9,32 @@ crate-type = ["cdylib"]
 [dependencies]
 macroquad = "0.3"
 wasm-bindgen = "0.2.84"
+wasm-bindgen-futures = "0.4.34"
 js-sys = "0.3.59"
 
-image = "0.24.6"
-data-url = "0.2.0"
-
+#minreq = "2.7.0"
+#reqwest = "0.11.16"
+#tokio = { version = "1.28.0", features = ["rt"] }
 [dependencies.web-sys]
 version = "0.3.61"
 
 features = [
     'console',
-#    'Document',
-#    'Element',
-#    'HtmlCanvasElement',
-#    'HtmlImageElement',
-#    'Performance',
-#    'WebGlFramebuffer',
-#    'WebGl2RenderingContext',
-#    'WebGlUniformLocation',
-#    'WebGlBuffer',
-#    'WebGlProgram',
-#    'WebGlShader',
-#    'WebGlVertexArrayObject',
-#    'WebGlTexture',
-#    'Window',
+    'Request',
+    'Response',
+    #    'Document',
+    #    'Element',
+    #    'HtmlCanvasElement',
+    #    'HtmlImageElement',
+    #    'Performance',
+    #    'WebGlFramebuffer',
+    #    'WebGl2RenderingContext',
+    #    'WebGlUniformLocation',
+    #    'WebGlBuffer',
+    #    'WebGlProgram',
+    #    'WebGlShader',
+    #    'WebGlVertexArrayObject',
+    #    'WebGlTexture',
+    'ReadableStream',
+    'Window',
 ]

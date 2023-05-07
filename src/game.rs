@@ -1,17 +1,13 @@
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::hash::Hash;
-use std::rc::Rc;
 
-use data_url::DataUrl;
-use image::ImageFormat;
-use js_sys::{Array, Function, JsString};
+// use image::ImageFormat;
+use js_sys::{Array, ArrayBuffer, Function, JsString, Uint8Array};
+use macroquad::prelude::{draw_texture, ImageFormat, Texture2D, WHITE};
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
-use web_sys::console;
-use web_sys::console::log_1;
-
-// use crate::renderer::Texture;
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{Request, Response};
 
 #[wasm_bindgen(typescript_custom_section)]
 const SCRIPT: &'static str = r#"
@@ -51,9 +47,10 @@ pub static OBJECTS: RefCell<HashMap<usize, JsGameObject>> = RefCell::new(HashMap
 pub static OBJECTS_INDEX: RefCell<ObjectsIndex> = RefCell::new(ObjectsIndex::default());
 }
 
-// pub static mut TEXTURES: Vec<Texture> = vec![];
+pub static mut TEXTURES: Vec<Texture2D> = vec![];
 pub static mut DEL_OBJECTS: Vec<usize> = vec![];
 
+#[allow(dead_code)]
 #[derive(Default)]
 pub struct ObjectsIndex {
     names: HashMap<String, usize>,
@@ -71,8 +68,11 @@ impl Gloam {
         Gloam::update(delta);
     }
 
-    pub fn draw(tex_id: usize, x: f64, y: f64) {
-
+    pub fn draw(tex_id: usize, x: f32, y: f32) {
+        let tex = unsafe { TEXTURES.get(tex_id) };
+        if let Some(tex) = tex {
+            draw_texture(*tex, x, y, WHITE);
+        }
         // // Render
         // RENDERER.with(|renderer| unsafe {
         //     let renderer = renderer.borrow();
@@ -120,22 +120,22 @@ impl Gloam {
     }
 
     // TODO https://webpack.js.org/guides/asset-modules/#resource-assets
-    pub fn load_texture(img_data: &str) -> usize {
-        log_1(&img_data.into());
-        // let url = DataUrl::process(img_data).unwrap();
-        // let (body, ..) = url.decode_to_vec().unwrap();
+    pub async fn load_texture(img_url: &str) -> usize {
+        let request = Request::new_with_str(img_url).unwrap();
 
-        // log_1(&"we loaded a tex".into());
-        //
-        // let img = image::load_from_memory(&body).unwrap();
-        // let img = img.to_rgba8();
-        // let len = RENDERER.with(|renderer| {
-        //     let tex = renderer.borrow().load_texture(img);
-        //     unsafe { TEXTURES.push(tex) };
-        //     unsafe { TEXTURES.len() }
-        // });
-        // return len - 1;
-        0
+        let window = web_sys::window().unwrap();
+        let resp_value = JsFuture::from(window.fetch_with_request(&request)).await.unwrap();
+        let resp: Response = resp_value.dyn_into().unwrap();
+
+        let data = JsFuture::from(resp.array_buffer().unwrap()).await.unwrap();
+        let buffer: ArrayBuffer = data.dyn_into().unwrap();
+        let data_array: Vec<u8> = Uint8Array::new(&buffer).to_vec();
+
+        // log_1(&data_array);
+        let tex = Texture2D::from_file_with_format(data_array.as_slice(), Some(ImageFormat::Png));
+
+        unsafe { TEXTURES.push(tex); }
+        unsafe { return TEXTURES.len() - 1; }
     }
 
     pub fn add_object(js_object: JsGameObject) -> usize {
@@ -217,11 +217,11 @@ impl Gloam {
         })
     }
 
-    pub fn find_objs_with_type(type_name: &JsString) -> Vec<usize> {
+    pub fn find_objs_with_type(_type_name: &JsString) -> Vec<usize> {
         unimplemented!()
     }
 
-    pub fn find_obj_with_type(type_name: &JsString) -> usize {
+    pub fn find_obj_with_type(_type_name: &JsString) -> usize {
         unimplemented!()
     }
 
