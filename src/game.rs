@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-// use image::ImageFormat;
 use js_sys::{Array, ArrayBuffer, Function, JsString, Uint8Array};
 use macroquad::prelude::{draw_texture, ImageFormat, Texture2D, WHITE};
 use wasm_bindgen::JsCast;
@@ -15,6 +14,8 @@ export interface JsGameObject {
     init(): void;
     update(delta: number): void;
 }
+
+export function set_wasm(wasm: any): void;
 "#;
 
 
@@ -73,12 +74,6 @@ impl Gloam {
         if let Some(tex) = tex {
             draw_texture(*tex, x, y, WHITE);
         }
-        // // Render
-        // RENDERER.with(|renderer| unsafe {
-        //     let renderer = renderer.borrow();
-        //     log_1(&format!("{x} {y}").into());
-        //     renderer.draw_image(&TEXTURES[tex_id], x as u32, y as u32);
-        // });
     }
 
     pub fn update(delta: f64) {
@@ -108,30 +103,18 @@ impl Gloam {
                     object.update(delta);
                 }
             });
-            //
-            // // Render
-            // RENDERER.with(|renderer| {
-            //     let renderer = renderer.borrow();
-            //     for texture in &TEXTURES {
-            //         renderer.draw_image(texture, 0, 0);
-            //     }
-            // });
         }
     }
 
-    // TODO https://webpack.js.org/guides/asset-modules/#resource-assets
     pub async fn load_texture(img_url: &str) -> usize {
         let request = Request::new_with_str(img_url).unwrap();
 
         let window = web_sys::window().unwrap();
-        let resp_value = JsFuture::from(window.fetch_with_request(&request)).await.unwrap();
-        let resp: Response = resp_value.dyn_into().unwrap();
+        let resp: Response = JsFuture::from(window.fetch_with_request(&request)).await.unwrap().dyn_into().unwrap();
 
-        let data = JsFuture::from(resp.array_buffer().unwrap()).await.unwrap();
-        let buffer: ArrayBuffer = data.dyn_into().unwrap();
-        let data_array: Vec<u8> = Uint8Array::new(&buffer).to_vec();
+        let image_data: ArrayBuffer = JsFuture::from(resp.array_buffer().unwrap()).await.unwrap().dyn_into().unwrap();
+        let data_array: Vec<u8> = Uint8Array::new(&image_data).to_vec();
 
-        // log_1(&data_array);
         let tex = Texture2D::from_file_with_format(data_array.as_slice(), Some(ImageFormat::Png));
 
         unsafe { TEXTURES.push(tex); }
@@ -165,7 +148,7 @@ impl Gloam {
         unsafe { DEL_OBJECTS.push(id) };
     }
 
-    pub fn with_object(id: usize, f: &js_sys::Function) {
+    pub fn with_object(id: usize, f: &Function) {
         OBJECTS.with(|objects| {
             let this = JsValue::null();
             let objects = objects.borrow();
@@ -179,7 +162,7 @@ impl Gloam {
         let ids = JsValue::from(ids).unchecked_into::<Array>();
         let f = JsValue::from(f).unchecked_into::<Function>();
 
-        let this = JsValue::null();
+        let this_ref = JsValue::null();
 
         OBJECTS.with(|objects| {
             let objects = objects.borrow();
@@ -190,7 +173,7 @@ impl Gloam {
                     // TODO can I make this dynamic?
                     1 => {
                         if let Some(o1) = objects.get(&id) {
-                            f.call1(&this, o1).unwrap();
+                            f.call1(&this_ref, o1).unwrap();
                         }
                     }
                     _ => {}
