@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="build wasm" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value=" post build --release --target wasm32-unknown-unknown&#10;" />
+    <option name="command" value=" post build --target wasm32-unknown-unknown --release " />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="true" />
