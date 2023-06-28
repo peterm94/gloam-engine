@@ -7,6 +7,7 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, Response};
+use web_sys::console::log_1;
 
 #[wasm_bindgen(typescript_custom_section)]
 const SCRIPT: &'static str = r#"
@@ -180,6 +181,17 @@ impl Gloam {
                 }
             }
         });
+
+        // let args = Array::new();
+        //
+        // for object_id in ids.iter() {
+        //     let id = JsValue::from(object_id).as_f64().unwrap() as usize;
+        //     log_1(&format!("I need {id}").into());
+        //     let found = objects.get(&id).unwrap();
+        //     // args.push(objects.get(&id).unwrap());
+        // }
+        //
+        // f.apply(&this_ref, &args).unwrap();
     }
 
     pub fn with_type(type_name: &JsString, f: &WithObjFn) {
