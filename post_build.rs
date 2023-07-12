@@ -36,6 +36,9 @@ fn main() {
         .replace("let wasm;", "let wasm; export const set_wasm = (w) => wasm = w;")
         .replace("imports['env'] = __wbg_star0;", "return imports.wbg;")
         .replace("async function init(input) {", "async function init(input) { return getImports(); } async function _unusedInit(input) {");
+
+    let mq_js_bundle = fs::read_to_string(manifest_dir.join("js").join("mq_js_bundle.js")).unwrap();
+    let fixed_js = fixed_js + &mq_js_bundle;
     fs::write(&js_path, fixed_js).unwrap();
 
     // Output a package.json
@@ -45,6 +48,7 @@ fn main() {
   "files": [
     "gloam_engine.d.ts",
     "gloam_engine.js",
+    "mq_js_bundle.js",
     "gloam_engine_bg.wasm",
     "gloam_engine_bg.wasm.d.ts"
   ],

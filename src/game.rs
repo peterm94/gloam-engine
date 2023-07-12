@@ -16,7 +16,7 @@ export interface JsGameObject {
     update(delta: number): void;
 }
 
-export function set_wasm(wasm: any): void;
+export function load_game(onReady : () => void): void;
 "#;
 
 
@@ -36,6 +36,9 @@ extern "C" {
 extern "C" {
     #[wasm_bindgen(typescript_type = "(object: JsGameObject) => void")]
     pub type WithObjFn;
+
+    #[wasm_bindgen(typescript_type = "(objects: [JsGameObject]) => void")]
+    pub type WithObjsFn;
 
     #[wasm_bindgen(typescript_type = "number[]")]
     pub type JsNumArray;
@@ -91,7 +94,7 @@ impl Gloam {
 
 
             OBJECTS.with(|objects| {
-                for (k, object) in objects.borrow().iter() {
+                for (_, object) in objects.borrow().iter() {
                     object.update(delta);
                 }
             });
@@ -137,7 +140,7 @@ impl Gloam {
             let id = ID_COUNT;
             ID_COUNT += 1;
             NEXT_OBJECTS.push((id, js_object));
-            log(&format!("AAAA {:?}", NEXT_OBJECTS.iter().map(|(k, _)| { k }).collect::<Vec<&usize>>()));
+
             Gloam::add_type(name, id);
             id
         }
@@ -158,7 +161,9 @@ impl Gloam {
         unsafe { DEL_OBJECTS.push(id) };
     }
 
-    pub fn with_object(id: usize, f: &Function) {
+    pub fn with_object(id: usize, f: &WithObjFn) {
+        let f = JsValue::from(f).unchecked_into::<Function>();
+
         OBJECTS.with(|objects| {
             let this = JsValue::null();
             let objects = objects.borrow();
@@ -168,7 +173,7 @@ impl Gloam {
         });
     }
 
-    pub fn with_objects(ids: JsNumArray, f: &WithObjFn) {
+    pub fn with_objects(ids: JsNumArray, f: &WithObjsFn) {
         let ids = JsValue::from(ids).unchecked_into::<Array>();
         let f = JsValue::from(f).unchecked_into::<Function>();
 
@@ -176,36 +181,20 @@ impl Gloam {
 
         OBJECTS.with(|objects| {
             let objects = objects.borrow();
-            let idsz = objects.iter().map(|(id, ..)| id).collect::<Vec<&usize>>();
-            log_1(&format!("All objects: {:?}", &idsz).into());
-
-            //
-            //     for id in ids.iter() {
-            //         let id = JsValue::from(id).as_f64().unwrap() as usize;
-            //         match ids.length() {
-            //             // TODO can I make this dynamic?
-            //             1 => {
-            //                 if let Some(o1) = objects.get(&id) {
-            //                     f.call1(&this_ref, o1).unwrap();
-            //                 }
-            //             }
-            //             _ => {}
-            //         }
-            //     }
-            // });
 
             let args = Array::new();
 
             for object_id in ids.iter() {
                 let id = JsValue::from(object_id).as_f64().unwrap() as usize;
-                log_1(&format!("I need {id}").into());
+
                 if let Some(found) = objects.get(&id) {
                     args.push(found);
                 } else {
                     return;
                 }
             }
-            f.apply(&this_ref, &args).unwrap();
+            f.call1(&this_ref, &args).unwrap();
+            // f.apply(&this_ref, &args).unwrap();
         });
     }
 
