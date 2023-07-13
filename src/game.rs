@@ -65,7 +65,8 @@ pub struct ObjectsIndex {
 
 
 #[wasm_bindgen]
-pub struct Gloam;
+pub struct Gloam {
+}
 
 fn log(str: &String) {
     log_1(&str.into());
@@ -75,13 +76,6 @@ fn log(str: &String) {
 impl Gloam {
     pub fn update_once(delta: f64) {
         Gloam::update(delta);
-    }
-
-    pub fn draw(tex_id: usize, x: f32, y: f32) {
-        let tex = unsafe { TEXTURES.get(tex_id) };
-        if let Some(tex) = tex {
-            draw_texture(*tex, x, y, WHITE);
-        }
     }
 
     pub fn update(delta: f64) {
