@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use js_sys::{Array, ArrayBuffer, Function, JsString, Uint8Array};
-use macroquad::prelude::{draw_texture, ImageFormat, Texture2D, WHITE};
+use macroquad::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
