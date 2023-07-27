@@ -1,7 +1,5 @@
 # Gloam
 
----
-
 ## Setup
 
 - Install [rust](https://rustup.rs/)
