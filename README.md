@@ -15,7 +15,7 @@ Run `cargo post build --target wasm32-unknown-unknown --release`.
 A run configuration is provided for CLion.
 
 ## Web Project
-- 
+
 - Run `npm i`
 - Run `npm run dev`
 
