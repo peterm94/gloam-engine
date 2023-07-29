@@ -24,6 +24,8 @@ fn main() {
     let manifest_dir = Path::new(env!("CRATE_MANIFEST_DIR"));
     let dist_dir = manifest_dir.join("dist");
 
+    std::fs::create_dir_all(&dist_dir).unwrap();
+
     let result = shell(["wasm-bindgen",
         wasm_target.to_str().unwrap(),
         "--out-dir", dist_dir.to_str().unwrap(),
