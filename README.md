@@ -16,6 +16,7 @@ A run configuration is provided for CLion.
 
 ## Web Project
 
+- Run `cd web`
 - Run `npm i`
 - Run `npm run dev`
 

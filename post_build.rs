@@ -1,21 +1,6 @@
-use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
-use std::process::{Command, Output};
-
-fn shell<I, S>(args: I) -> Output where I: IntoIterator<Item=S>, S: AsRef<OsStr> {
-    let mut shell = if cfg!(target_os = "windows") {
-        let mut sh = Command::new("cmd");
-        sh.arg("/C");
-        sh
-    } else {
-        let mut sh = Command::new("sh");
-        sh.arg("-c");
-        sh
-    };
-
-    shell.args(args).output().expect("Failed to execute process.")
-}
+use std::process::{Command};
 
 fn main() {
     let project_name = "gloam_engine";
@@ -26,10 +11,12 @@ fn main() {
 
     std::fs::create_dir_all(&dist_dir).unwrap();
 
-    let result = shell(["wasm-bindgen",
-        wasm_target.to_str().unwrap(),
-        "--out-dir", dist_dir.to_str().unwrap(),
-        "--target", "web"]);
+    let result = Command::new("wasm-bindgen")
+        .args([wasm_target.to_str().unwrap(),
+            "--out-dir", dist_dir.to_str().unwrap(),
+            "--target", "web", "--debug"])
+        .output()
+        .expect("Failed to execute process.");
 
     // Fix issues with generated files
     let js_path = dist_dir.join(format!("{project_name}.js"));
