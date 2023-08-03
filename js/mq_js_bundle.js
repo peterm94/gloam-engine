@@ -5,11 +5,11 @@ let pub_exports = {};
 export async function load_game(onReady) {
     await impl_run(onReady);
 }
-// init() and set_wasm are present in gloam_engine.js, this file is concatenated to it, so they will resolve when built.
+// __wbg_init() and set_wasm are present in gloam_engine.js, this file is concatenated to it, so they will resolve when built.
 async function impl_run(onReady)
 {
     bundle_it();
-    let wbg = await init();
+    let wbg = await __wbg_init();
     pub_exports.miniquad_add_plugin({
         register_plugin: (a) => (a.wbg = wbg),
         on_init: () => {
