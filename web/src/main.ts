@@ -14,7 +14,7 @@ function run()
     document.getElementById("glcanvas").removeAttribute("hidden");
     document.getElementById("glcanvas").focus();
     load_game(() => {
-        Gloam.add_object(new Tests());
+        Gloam.add_object(new Snake());
     });
 }
 

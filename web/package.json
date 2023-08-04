@@ -9,10 +9,11 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "gloam-engine": "file:../dist",
     "typescript": "^5.0.2",
-    "vite": "^4.3.4",
-    "gloam-engine": "file:../dist"
+    "vite": "^4.3.4"
   },
   "dependencies": {
+    "@rwh/keystrokes": "^1.1.3"
   }
 }

@@ -1,6 +1,7 @@
 import {Gloam, JsGameObject} from "gloam-engine";
 import redSpr from "./art/red.png?url";
 import appleSpr from "./art/apple.png?url";
+import {bindKey} from '@rwh/keystrokes'
 
 class Apple implements JsGameObject
 {
@@ -34,14 +35,14 @@ class Apple implements JsGameObject
             // console.log("SNAME: ", other.apple)
         });
 
-        Gloam.draw_texture(1, this.pos_x, this.pos_y);
+        Gloam.draw_texture(1, this.pos_x * 32, this.pos_y * 32);
     }
 
     public move()
     {
         // TODO rand
-        this.pos_x = 32 * (Math.round(Math.random() * 16));
-        this.pos_y = 32 * (Math.round(Math.random() * 16));
+        this.pos_x = (Math.round(Math.random() * 16));
+        this.pos_y = (Math.round(Math.random() * 16));
     }
 }
 
@@ -53,6 +54,7 @@ export class Snake implements JsGameObject
     apple: Apple
 
     mps = 0;
+
     init(): void
     {
         // console.log(import.meta.url)
@@ -62,13 +64,30 @@ export class Snake implements JsGameObject
         Gloam.load_texture(new URL(appleSpr, import.meta.url).href);
         this.apple = new Apple();
         Gloam.add_object(this.apple);
+
+        bindKey('a', () => {
+            this.x_dir = -1;
+            this.y_dir = 0;
+        });
+        bindKey('d', () => {
+            this.x_dir = 1;
+            this.y_dir = 0;
+        });
+        bindKey('w', () => {
+            this.x_dir = 0;
+            this.y_dir = -1;
+        });
+        bindKey('s', () => {
+            this.x_dir = 0;
+            this.y_dir = 1;
+        });
     }
 
     update(delta: number): void
     {
         this.mps += delta;
 
-        if (this.mps > 0.5)
+        if (this.mps > 100)
         {
             this.mps = 0;
             // console.log(this.segments);
@@ -76,8 +95,9 @@ export class Snake implements JsGameObject
             const head = this.segments[0];
             this.segments.unshift([head[0] + this.x_dir, head[1] + this.y_dir]);
 
+            console.log(head[0], this.apple.pos_x);
             // if collecting an apple, don't do this.
-            if (head[0] == this.apple.pos_x && head[1] == this.apple.pos_y)
+            if (this.segments[0][0] == this.apple.pos_x && this.segments[0][1] == this.apple.pos_y)
             {
                 this.apple.move();
             } else
