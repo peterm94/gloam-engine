@@ -16,6 +16,7 @@ pub fn main2() {
 #[macroquad::main("Gloam")]
 async fn main() {
     loop {
+        let delta = get_frame_time();
         game::Gloam::update(delta as f64);
         next_frame().await
     }

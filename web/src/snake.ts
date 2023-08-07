@@ -48,9 +48,12 @@ class Apple implements JsGameObject
 
 export class Snake implements JsGameObject
 {
-    segments: [[number, number]] = [[0, 0]];
+    segments: [number, number][] = [[14, 13], [13, 13], [12, 13]];
     x_dir = 1;
     y_dir = 0;
+
+    next_x = 0;
+    next_y = 0;
     apple: Apple
 
     mps = 0;
@@ -66,20 +69,20 @@ export class Snake implements JsGameObject
         Gloam.add_object(this.apple);
 
         bindKey('a', () => {
-            this.x_dir = -1;
-            this.y_dir = 0;
+            this.next_x = -1;
+            this.next_y = 0;
         });
         bindKey('d', () => {
-            this.x_dir = 1;
-            this.y_dir = 0;
+            this.next_x = 1;
+            this.next_y = 0;
         });
         bindKey('w', () => {
-            this.x_dir = 0;
-            this.y_dir = -1;
+            this.next_x = 0;
+            this.next_y = -1;
         });
         bindKey('s', () => {
-            this.x_dir = 0;
-            this.y_dir = 1;
+            this.next_x = 0;
+            this.next_y = 1;
         });
     }
 
@@ -87,8 +90,17 @@ export class Snake implements JsGameObject
     {
         this.mps += delta;
 
-        if (this.mps > 100)
+        if (this.mps > 0.5 * (3 / this.segments.length))
         {
+            if ((this.next_x + this.x_dir != 0 || this.next_y + this.y_dir != 0)
+                && (this.next_x != 0 || this.next_y != 0))
+            {
+                this.x_dir = this.next_x;
+                this.y_dir = this.next_y;
+                this.next_x = 0;
+                this.next_y = 0;
+            }
+
             this.mps = 0;
             // console.log(this.segments);
             // move the head
