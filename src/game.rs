@@ -1,3 +1,4 @@
+use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -14,6 +15,10 @@ const SCRIPT: &'static str = r#"
 export interface JsGameObject {
     init(): void;
     update(delta: number): void;
+}
+
+export interface EventSub {
+    trigger(): void;
 }
 
 export function load_game(onReady : () => void): void;
@@ -42,6 +47,12 @@ extern "C" {
 
     #[wasm_bindgen(typescript_type = "number[]")]
     pub type JsNumArray;
+
+    #[wasm_bindgen(typescript_type = "EventSub")]
+    pub type EventSub;
+
+    #[wasm_bindgen(structural, method)]
+    pub fn trigger(this: &EventSub);
 }
 
 pub static mut ID_COUNT: usize = 1;
@@ -50,10 +61,12 @@ pub static mut NEXT_OBJECTS: Vec<(usize, JsGameObject)> = vec![];
 thread_local! {
 pub static OBJECTS: RefCell<HashMap<usize, JsGameObject>> = RefCell::new(HashMap::new());
 pub static OBJECTS_INDEX: RefCell<ObjectsIndex> = RefCell::new(ObjectsIndex::default());
+pub static EVENTS: RefCell<HashMap<String, Vec<EventSub>>> = RefCell::new(HashMap::new());
 }
 
 pub static mut TEXTURES: Vec<Texture2D> = vec![];
 pub static mut DEL_OBJECTS: Vec<usize> = vec![];
+
 
 #[allow(dead_code)]
 #[derive(Default)]
@@ -63,10 +76,29 @@ pub struct ObjectsIndex {
     tags: HashMap<String, Box<Vec<usize>>>,
 }
 
+struct EventData;
 
 #[wasm_bindgen]
-pub struct Gloam {
+impl Gloam {
+    pub fn register(event: &str, sub: EventSub) {
+        EVENTS.with(|events| {
+            events.borrow_mut().entry(event.to_string()).or_insert_with(|| vec![]).push(sub);
+        })
+    }
+
+    pub fn trigger(event: &str) {
+        EVENTS.with(|events| {
+            if let Some(event) = events.borrow().get(event) {
+                for sub in event {
+                    sub.trigger();
+                }
+            }
+        });
+    }
 }
+
+#[wasm_bindgen]
+pub struct Gloam {}
 
 fn log(str: &String) {
     log_1(&str.into());

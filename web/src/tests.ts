@@ -10,6 +10,10 @@ class A implements JsGameObject
 
     init(): void
     {
+        Gloam.register("TEST", {trigger()
+            {
+                console.log("hello");
+            }})
     }
 
     update(delta: number): void
@@ -19,11 +23,11 @@ class A implements JsGameObject
         let txt = "yhello does a newline work?\nNyes?\nyNo?";
         // let txt = "a;";
         let dims = Gloam.measure_text(txt, 40);
-        console.log(dims.height)
         Gloam.draw_rectangle_filled(50, 50 - dims.offset_y, dims.width, dims.height, 0x333e4f);
         // draw_rectangle(x, baseline - size.offset_y, size.width, size.height, BLUE);
 
         Gloam.draw_text(txt, 50, 50, 40, 0x1ebd48);
+        Gloam.trigger("TEST")
     }
 }
 
