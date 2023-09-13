@@ -2,11 +2,13 @@
 
 use macroquad::prelude::*;
 use wasm_bindgen::prelude::*;
+use crate::scene2::{Graph, SCENE_GRAPH};
 
 mod game;
 mod draw;
 mod events;
 mod scene;
+mod scene2;
 
 #[wasm_bindgen]
 pub fn main2() {
@@ -15,6 +17,7 @@ pub fn main2() {
 
 #[macroquad::main("Gloam")]
 async fn main() {
+
     loop {
         let delta = get_frame_time();
         game::Gloam::update(delta as f64);

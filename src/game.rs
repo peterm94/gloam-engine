@@ -13,6 +13,9 @@ use crate::scene::ObjectsIndex;
 
 #[wasm_bindgen(typescript_custom_section)]
 const SCRIPT: &'static str = r#"
+// TODO make this a functional interface, you provide the functions you want to implement
+// you get an object back that contains the id assigned and a transform
+// you use that thing for any future interactions. if you need a class, ???? store that stuff somewhere else?
 export interface JsGameObject {
     init(): void;
     update(delta: number): void;
@@ -42,6 +45,8 @@ pub static OBJECTS: RefCell<HashMap<usize, JsGameObject>> = RefCell::new(HashMap
 pub static OBJECTS_INDEX: RefCell<ObjectsIndex> = RefCell::new(ObjectsIndex::default());
 pub static EVENTS: RefCell<HashMap<String, Vec<EventSub>>> = RefCell::new(HashMap::new());
 }
+
+// objects is a tree
 
 pub static mut TEXTURES: Vec<Texture2D> = vec![];
 pub static mut DEL_OBJECTS: Vec<usize> = vec![];

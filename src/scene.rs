@@ -4,6 +4,7 @@ use js_sys::{Array, Function, JsString};
 use wasm_bindgen::prelude::*;
 
 use crate::game::{DEL_OBJECTS, Gloam, ID_COUNT, JsGameObject, log, NEXT_OBJECTS, OBJECTS, OBJECTS_INDEX};
+use crate::scene2::Scene;
 
 #[allow(dead_code)]
 #[derive(Default)]
@@ -33,20 +34,23 @@ impl Gloam {
     }
 
     pub fn update(delta: f64) {
+        Scene::update(delta);
         unsafe {
+            // Lifecycle delete
             DEL_OBJECTS.drain(..).for_each(|x| {
                 OBJECTS.with(|objects| {
                     objects.borrow_mut().remove(&x);
                 })
             });
 
-
+            // Run update for objects this frame
             OBJECTS.with(|objects| {
                 for (_, object) in objects.borrow().iter() {
                     object.update(delta);
                 }
             });
 
+            // Add any pending objects
             if !NEXT_OBJECTS.is_empty() {
                 // move the pending additions out of the static so it doesn't cause problems with init()
                 let mut temp = vec![];
@@ -68,37 +72,20 @@ impl Gloam {
 
 
     pub fn add_object(js_object: JsGameObject) -> usize {
-        let name = Gloam::get_js_obj_name(&js_object);
+        let name = get_js_obj_name(&js_object);
         log(&format!("name {name}"));
         unsafe {
             let id = ID_COUNT;
             ID_COUNT += 1;
             NEXT_OBJECTS.push((id, js_object));
 
-            Gloam::add_type(name, id);
+            add_type(name, id);
             id
         }
     }
 
     pub fn destroy_object(id: usize) {
         unsafe { DEL_OBJECTS.push(id) };
-    }
-
-    fn get_js_obj_name(x: &JsValue) -> String {
-        let proto = js_sys::Object::get_prototype_of(x);
-        let constructor = proto.constructor();
-        constructor.name().as_string().unwrap()
-    }
-
-    fn add_type(name: String, id: usize) {
-        OBJECTS_INDEX.with(|index| {
-            let mut index = index.borrow_mut();
-            if let Some(inner) = index.types.get_mut(&name) {
-                inner.push(id);
-            } else {
-                index.types.insert(name, Box::new(vec![id]));
-            }
-        });
     }
 
     pub fn with_type(type_name: &JsString, f: &WithObjFn) {
@@ -153,7 +140,6 @@ impl Gloam {
                 }
             }
             f.call1(&this_ref, &args).unwrap();
-            // f.apply(&this_ref, &args).unwrap();
         });
     }
 
@@ -164,4 +150,21 @@ impl Gloam {
     pub fn find_obj_with_type(_type_name: &JsString) -> usize {
         unimplemented!()
     }
+}
+
+fn get_js_obj_name(x: &JsValue) -> String {
+    let proto = js_sys::Object::get_prototype_of(x);
+    let constructor = proto.constructor();
+    constructor.name().as_string().unwrap()
+}
+
+fn add_type(name: String, id: usize) {
+    OBJECTS_INDEX.with(|index| {
+        let mut index = index.borrow_mut();
+        if let Some(inner) = index.types.get_mut(&name) {
+            inner.push(id);
+        } else {
+            index.types.insert(name, Box::new(vec![id]));
+        }
+    });
 }

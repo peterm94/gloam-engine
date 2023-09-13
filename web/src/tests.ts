@@ -1,23 +1,20 @@
 import {Gloam, JsGameObject} from "gloam-engine";
 
 
-class A implements JsGameObject
-{
+class A implements JsGameObject {
 
-    constructor(readonly name: String)
-    {
+    constructor(readonly name: String) {
     }
 
-    init(): void
-    {
-        Gloam.register("TEST", {trigger()
-            {
+    init(): void {
+        Gloam.register("TEST", {
+            trigger() {
                 console.log("hello");
-            }})
+            }
+        })
     }
 
-    update(delta: number): void
-    {
+    update(delta: number): void {
         // Gloam.draw_circle_filled(100, 100, 40, 0x0000FF);
         // Gloam.draw_rectangle(400, 30, 24, 144, 41, 0xFF0020);
         let txt = "yhello does a newline work?\nNyes?\nyNo?";
@@ -31,25 +28,19 @@ class A implements JsGameObject
     }
 }
 
-class B implements JsGameObject
-{
-    init(): void
-    {
+class B implements JsGameObject {
+    init(): void {
     }
 
-    update(delta: number): void
-    {
+    update(delta: number): void {
     }
-
 }
 
-export class Tests implements JsGameObject
-{
+export class Tests implements JsGameObject {
     private first: number;
     private second: number;
 
-    init(): void
-    {
+    init(): void {
         console.log("init")
         this.first = Gloam.add_object(new A("first"));
         this.second = Gloam.add_object(new A("second"));
@@ -59,10 +50,10 @@ export class Tests implements JsGameObject
         Gloam.add_object(new B());
     }
 
-    update(delta: number): void
-    {
+    update(delta: number): void {
         Gloam.draw_line(10, 10, 100, 10, 10, 0);
         Gloam.with_objects([this.first, this.second], objects => {
+            // @ts-ignore
             const [a, b]: [A, A] = objects;
 
             Gloam.with_objects([this.first, this.second], obk => {

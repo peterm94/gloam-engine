@@ -1,26 +1,22 @@
-import {Gloam, JsGameObject} from "../../dist";
+import {GameObject} from "./GameObject.ts";
 
-export class SpaceInvaders implements JsGameObject {
+export class SpaceInvaders extends GameObject {
 
     player = new Player();
     aliens: Alien[] = [];
 
     init(): void {
-        Gloam.add_object(this.player);
-
         for (let i = 0; i < 5; i++) {
             const alien = new Alien();
-            Gloam.add_object(alien);
             this.aliens.push(alien)
         }
     }
 
     update(delta: number): void {
-
     }
 }
 
-class Alien implements JsGameObject {
+class Alien extends GameObject {
     init(): void {
     }
 
@@ -28,7 +24,7 @@ class Alien implements JsGameObject {
     }
 }
 
-class Player implements JsGameObject {
+class Player extends GameObject {
     init(): void {
     }
 
@@ -36,7 +32,7 @@ class Player implements JsGameObject {
     }
 }
 
-class AlienControl implements JsGameObject {
+class AlienControl extends GameObject {
     init(): void {
     }
 
