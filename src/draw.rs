@@ -1,6 +1,5 @@
 use macroquad::prelude::*;
 use wasm_bindgen::prelude::*;
-use web_sys::console::log_1;
 
 use crate::game::{Gloam, TEXTURES};
 
@@ -9,7 +8,7 @@ impl Gloam {
     pub fn draw_texture(tex_id: usize, x: f32, y: f32) {
         let tex = unsafe { TEXTURES.get(tex_id) };
         if let Some(tex) = tex {
-            draw_texture(*tex, x, y, WHITE);
+            draw_texture(tex, x, y, WHITE);
         }
     }
 
@@ -17,7 +16,7 @@ impl Gloam {
     pub fn draw_texture_ex(tex_id: usize, x: f32, y: f32) {
         let tex = unsafe { TEXTURES.get(tex_id) };
         if let Some(tex) = tex {
-            draw_texture_ex(*tex, x, y, WHITE, DrawTextureParams::default());
+            draw_texture_ex(tex, x, y, WHITE, DrawTextureParams::default());
         }
     }
 
@@ -73,8 +72,8 @@ impl Gloam {
             return dims.into();
         }
         let mut width = 0.0;
-        let mut height = measure_text("Ay", None, size as _, 1.).height;
-        let mut offset_y = dims.offset_y;
+        let height = measure_text("Ay", None, size as _, 1.).height;
+        let offset_y = dims.offset_y;
 
         // This is a pixel short without this, not sure how it scales to lots of lines.
         let mut lines = 0.1;

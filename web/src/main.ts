@@ -1,7 +1,6 @@
 import './style.css'
 import {Gloam, load_game} from "gloam-engine";
-import {Tests} from "./tests";
-import {Snake} from "./snake";
+import {SpaceInvaders} from "./space.ts";
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
@@ -9,12 +8,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </div>
 `
 
-function run()
-{
+function run() {
     document.getElementById("glcanvas").removeAttribute("hidden");
     document.getElementById("glcanvas").focus();
     load_game(() => {
-        Gloam.add_object(new Tests());
+        Gloam.add_object(new SpaceInvaders());
     });
 }
 

@@ -1,12 +1,12 @@
 #![feature(extern_types)]
 
 use macroquad::prelude::*;
-use macroquad::telemetry::log_string;
 use wasm_bindgen::prelude::*;
-use web_sys::console::log_1;
 
 mod game;
 mod draw;
+mod events;
+mod scene;
 
 #[wasm_bindgen]
 pub fn main2() {
