@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
 
 use trees::Tree;
 use wasm_bindgen::prelude::*;
@@ -21,11 +20,13 @@ extern "C" {
     pub fn id(this: &GameObject) -> usize;
 }
 
-struct Node {
+struct GNode {
     id: usize,
     transform: Transform,
+    object: Option<GameObject>,
 }
 
+#[wasm_bindgen]
 #[derive(Default)]
 struct Transform {
     pos_x: f32,
@@ -35,8 +36,7 @@ struct Transform {
 }
 
 pub struct Graph {
-    objects: HashMap<usize, GameObject>,
-    tree: Tree<Node>,
+    tree: Tree<GNode>,
 }
 
 thread_local! {
@@ -48,21 +48,27 @@ static mut ADD_OBJECTS: Vec<(usize, GameObject)> = vec![];
 impl Graph {
     pub fn new() -> Self {
         Self {
-            objects: HashMap::new(),
-            tree: Tree::new(Node { id: 0, transform: Transform::default() }),
+            tree: Tree::new(GNode { id: 0, transform: Transform::default(), object: None }),
         }
     }
 
     pub fn add(&mut self, parent_id: usize, child: GameObject) {
         let child_id = child.id();
-        self.tree.iter_mut().find(|node| node.data().id == parent_id)
-            .and_then(|node| {
-                node.get_mut().push_back(Tree::new(Node { id: child_id, transform: Transform::default() }));
-                None::<Node>
-            });
 
-        self.objects.insert(child_id, child);
-        log(&format!("adding {parent_id} -> {child_id}"));
+        let new_node = Tree::new(GNode { id: child_id, transform: Transform::default(), object: Some(child) });
+        if parent_id == 0 {
+            self.tree.push_back(new_node);
+            log(&format!("adding {parent_id} -> {child_id}"));
+            return;
+        }
+
+        let mut node = &self.tree;
+
+         if let Some(node) = self.tree.bfs_children_mut().iter.find(|node| node.data.id == parent_id) {
+
+            // node.push_back(new_node);
+            log(&format!("adding {parent_id} -> {child_id}"));
+        }
     }
 }
 
@@ -89,20 +95,25 @@ impl Scene {
                     // graph.graph.remove(&x.id());
                     // TODO get parent and fix that up
                     // if let Some(inner) = graph.graph.get()
-                    graph.objects.remove(&x.id());
+                    // graph.objects.remove(&x.id());
                 });
             })
         }
 
         SCENE_GRAPH.with(|graph| {
             let graph = graph.borrow();
-            for obj in graph.objects.values() {
-                obj.update(delta);
+            for obj in graph.tree.bfs_children().iter
+            {
+                log(&format!("{}", obj.data.id));
+                if let Some(object) = &obj.data.object {
+                    object.update(delta);
+                }
             }
         });
 
         unsafe {
             if !ADD_OBJECTS.is_empty() {
+                // TODO we can do some mem swapping probably to avoid a copy and alloc each time
                 let mut temp = vec![];
                 temp.append(&mut ADD_OBJECTS);
 
@@ -118,5 +129,21 @@ impl Scene {
                 });
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let mut tree = Tree::new(0);
+        let mut tree2 = Tree::new(3);
+        tree.push_back(Tree::new(1));
+        tree2.push_back(Tree::new(2));
+        tree.push_back(tree2);
+
+        tree.bfs_children().iter.for_each(|x| println!("{}", x.data))
     }
 }

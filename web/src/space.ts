@@ -22,6 +22,7 @@ export class SpaceInvaders extends GameObject
 
     update(delta: number): void
     {
+        console.log("hello")
     }
 }
 

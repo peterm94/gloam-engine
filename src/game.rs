@@ -19,8 +19,6 @@ thread_local! {
 pub static EVENTS: RefCell<HashMap<String, Vec<EventSub>>> = RefCell::new(HashMap::new());
 }
 
-// objects is a tree
-
 pub static mut TEXTURES: Vec<Texture2D> = vec![];
 pub static mut DEL_OBJECTS: Vec<usize> = vec![];
 

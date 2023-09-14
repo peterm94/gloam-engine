@@ -1,4 +1,4 @@
-import {Scene} from "gloam-engine"
+import {Scene, Transform} from "gloam-engine"
 import {SpaceInvaders} from "./space.ts";
 
 class Transform {
