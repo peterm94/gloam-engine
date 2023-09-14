@@ -9,40 +9,13 @@ use web_sys::{Request, Response};
 use web_sys::console::log_1;
 
 use crate::events::EventSub;
-use crate::scene::ObjectsIndex;
 
 #[wasm_bindgen(typescript_custom_section)]
 const SCRIPT: &'static str = r#"
-// TODO make this a functional interface, you provide the functions you want to implement
-// you get an object back that contains the id assigned and a transform
-// you use that thing for any future interactions. if you need a class, ???? store that stuff somewhere else?
-export interface JsGameObject {
-    init(): void;
-    update(delta: number): void;
-}
-
-export function load_game(onReady : () => void): void;
+export function load_game(onReady: () => void): void;
 "#;
 
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(typescript_type = "JsGameObject")]
-    pub type JsGameObject;
-
-    #[wasm_bindgen(structural, method)]
-    pub fn update(this: &JsGameObject, delta: f64);
-
-    #[wasm_bindgen(structural, method)]
-    pub fn init(this: &JsGameObject);
-}
-
-pub static mut ID_COUNT: usize = 1;
-pub static mut NEXT_OBJECTS: Vec<(usize, JsGameObject)> = vec![];
-
 thread_local! {
-pub static OBJECTS: RefCell<HashMap<usize, JsGameObject>> = RefCell::new(HashMap::new());
-pub static OBJECTS_INDEX: RefCell<ObjectsIndex> = RefCell::new(ObjectsIndex::default());
 pub static EVENTS: RefCell<HashMap<String, Vec<EventSub>>> = RefCell::new(HashMap::new());
 }
 

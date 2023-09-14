@@ -2,7 +2,7 @@ import './style.css'
 import {Gloam, load_game} from "gloam-engine";
 import {Tests} from "./tests.ts";
 import {GameObject, GameObjectTest} from "./GameObject.ts";
-import {SpaceInvaders} from "./space.ts";
+import {SpaceInvaders, start} from "./space.ts";
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
@@ -15,7 +15,7 @@ function run() {
     document.getElementById("glcanvas").focus();
     load_game(() => {
         // Gloam.add_object(new Tests());
-        new SpaceInvaders();
+        start();
     });
 }
 

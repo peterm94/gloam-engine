@@ -1,50 +1,75 @@
 import {GameObject} from "./GameObject.ts";
+import alien from "./art/aliens.png?url";
+import {Textures} from "./Texture";
+import {Gloam} from "../../dist";
+export async function start()
+{
+    await Textures.load_texture("alien", alien)
 
-export class SpaceInvaders extends GameObject {
+    new SpaceInvaders();
+}
 
+export class SpaceInvaders extends GameObject
+{
     player: Player
     controller: AlienControl
 
-    init(): void {
+    init(): void
+    {
         this.controller = new AlienControl();
         this.player = new Player();
     }
 
-    update(delta: number): void {
+    update(delta: number): void
+    {
     }
 }
 
-class Alien extends GameObject {
+class Alien extends GameObject
+{
+    alien_tex: number
     constructor(parent: GameObject)
     {
         super(parent);
-    }
-    init(): void {
+        this.alien_tex = Textures.get_tex("alien");
     }
 
-    update(delta: number): void {
+    init(): void
+    {
+    }
+
+    update(delta: number): void
+    {
+        Gloam.draw_texture(this.alien_tex, 0, 0);
     }
 }
 
-class Player extends GameObject {
-    init(): void {
+class Player extends GameObject
+{
+    init(): void
+    {
     }
 
-    update(delta: number): void {
+    update(delta: number): void
+    {
     }
 }
 
-class AlienControl extends GameObject {
+class AlienControl extends GameObject
+{
 
     aliens: Alien[] = [];
-    
-    init(): void {
-        for (let i = 0; i < 5; i++) {
+
+    init(): void
+    {
+        for (let i = 0; i < 5; i++)
+        {
             const alien = new Alien(this);
             this.aliens.push(alien)
         }
     }
 
-    update(delta: number): void {
+    update(delta: number): void
+    {
     }
 }

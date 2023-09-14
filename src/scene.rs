@@ -1,170 +1,122 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 
-use js_sys::{Array, Function, JsString};
+use trees::Tree;
 use wasm_bindgen::prelude::*;
 
-use crate::game::{DEL_OBJECTS, Gloam, ID_COUNT, JsGameObject, log, NEXT_OBJECTS, OBJECTS, OBJECTS_INDEX};
-use crate::scene2::Scene;
-
-#[allow(dead_code)]
-#[derive(Default)]
-pub struct ObjectsIndex {
-    names: HashMap<String, usize>,
-    types: HashMap<String, Box<Vec<usize>>>,
-    tags: HashMap<String, Box<Vec<usize>>>,
-}
+use crate::game::log;
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(typescript_type = "(object: JsGameObject) => void")]
-    pub type WithObjFn;
+    #[wasm_bindgen(typescript_type = "GameObject")]
+    pub type GameObject;
 
-    #[wasm_bindgen(typescript_type = "(objects: [JsGameObject]) => void")]
-    pub type WithObjsFn;
+    #[wasm_bindgen(structural, method)]
+    pub fn update(this: &GameObject, delta: f64);
 
-    #[wasm_bindgen(typescript_type = "number[]")]
-    pub type JsNumArray;
+    #[wasm_bindgen(structural, method)]
+    pub fn init(this: &GameObject);
+
+    #[wasm_bindgen(structural, method)]
+    pub fn id(this: &GameObject) -> usize;
 }
 
+struct Node {
+    id: usize,
+    transform: Transform,
+}
 
-#[wasm_bindgen]
-impl Gloam {
-    pub fn update_once(delta: f64) {
-        Gloam::update(delta);
+#[derive(Default)]
+struct Transform {
+    pos_x: f32,
+    pos_y: f32,
+    g_pos_x: f32,
+    g_pos_y: f32,
+}
+
+pub struct Graph {
+    objects: HashMap<usize, GameObject>,
+    tree: Tree<Node>,
+}
+
+thread_local! {
+pub static SCENE_GRAPH: RefCell<Graph> = RefCell::new(Graph::new());
+}
+static mut DEL_OBJECTS: Vec<GameObject> = vec![];
+static mut ADD_OBJECTS: Vec<(usize, GameObject)> = vec![];
+
+impl Graph {
+    pub fn new() -> Self {
+        Self {
+            objects: HashMap::new(),
+            tree: Tree::new(Node { id: 0, transform: Transform::default() }),
+        }
     }
 
+    pub fn add(&mut self, parent_id: usize, child: GameObject) {
+        let child_id = child.id();
+        self.tree.iter_mut().find(|node| node.data().id == parent_id)
+            .and_then(|node| {
+                node.get_mut().push_back(Tree::new(Node { id: child_id, transform: Transform::default() }));
+                None::<Node>
+            });
+
+        self.objects.insert(child_id, child);
+        log(&format!("adding {parent_id} -> {child_id}"));
+    }
+}
+
+#[wasm_bindgen]
+pub struct Scene;
+
+#[wasm_bindgen]
+impl Scene {
+    pub fn add_child(parent_id: usize, child: GameObject) {
+        unsafe { ADD_OBJECTS.push((parent_id, child)); }
+    }
+
+    pub fn remove_object(object: GameObject) {
+        unsafe { DEL_OBJECTS.push(object); }
+    }
+}
+
+impl Scene {
     pub fn update(delta: f64) {
-        Scene::update(delta);
         unsafe {
-            // Lifecycle delete
             DEL_OBJECTS.drain(..).for_each(|x| {
-                OBJECTS.with(|objects| {
-                    objects.borrow_mut().remove(&x);
-                })
-            });
+                SCENE_GRAPH.with(|graph| {
+                    let mut graph = graph.borrow_mut();
+                    // graph.graph.remove(&x.id());
+                    // TODO get parent and fix that up
+                    // if let Some(inner) = graph.graph.get()
+                    graph.objects.remove(&x.id());
+                });
+            })
+        }
 
-            // Run update for objects this frame
-            OBJECTS.with(|objects| {
-                for (_, object) in objects.borrow().iter() {
-                    object.update(delta);
-                }
-            });
+        SCENE_GRAPH.with(|graph| {
+            let graph = graph.borrow();
+            for obj in graph.objects.values() {
+                obj.update(delta);
+            }
+        });
 
-            // Add any pending objects
-            if !NEXT_OBJECTS.is_empty() {
-                // move the pending additions out of the static so it doesn't cause problems with init()
+        unsafe {
+            if !ADD_OBJECTS.is_empty() {
                 let mut temp = vec![];
-                temp.append(&mut NEXT_OBJECTS);
+                temp.append(&mut ADD_OBJECTS);
 
-                // init each object
-                temp.iter().for_each(|(_, x)| x.init());
+                // Initialize
+                temp.iter().for_each(|(_, x)| { x.init() });
 
-                // Put them in the global object map
-                OBJECTS.with(|objects| {
-                    let mut objects = objects.borrow_mut();
-                    temp.into_iter().for_each(|(k, v)| {
-                        objects.insert(k, v);
+                // Insert in the graph
+                SCENE_GRAPH.with(|graph| {
+                    let mut graph = graph.borrow_mut();
+                    temp.into_iter().for_each(|(parent_id, child)| {
+                        graph.add(parent_id, child);
                     });
                 });
             }
         }
     }
-
-
-    pub fn add_object(js_object: JsGameObject) -> usize {
-        let name = get_js_obj_name(&js_object);
-        log(&format!("name {name}"));
-        unsafe {
-            let id = ID_COUNT;
-            ID_COUNT += 1;
-            NEXT_OBJECTS.push((id, js_object));
-
-            add_type(name, id);
-            id
-        }
-    }
-
-    pub fn destroy_object(id: usize) {
-        unsafe { DEL_OBJECTS.push(id) };
-    }
-
-    pub fn with_type(type_name: &JsString, f: &WithObjFn) {
-        let f = JsValue::from(f).unchecked_into::<Function>();
-        let name: String = type_name.into();
-        OBJECTS_INDEX.with(|index| {
-            if let Some(ids) = index.borrow().types.get(&name) {
-                OBJECTS.with(|objects| {
-                    let objects = objects.borrow();
-                    for id in ids.iter() {
-                        let this = JsValue::null();
-                        if let Some(obj) = objects.get(&id) {
-                            f.call1(&this, obj).unwrap();
-                        }
-                    }
-                });
-            }
-        })
-    }
-
-
-    pub fn with_object(id: usize, f: &WithObjFn) {
-        let f = JsValue::from(f).unchecked_into::<Function>();
-
-        OBJECTS.with(|objects| {
-            let this = JsValue::null();
-            let objects = objects.borrow();
-            if let Some(obj) = objects.get(&id) {
-                f.call1(&this, obj).unwrap();
-            }
-        });
-    }
-
-    pub fn with_objects(ids: JsNumArray, f: &WithObjsFn) {
-        let ids = JsValue::from(ids).unchecked_into::<Array>();
-        let f = JsValue::from(f).unchecked_into::<Function>();
-
-        let this_ref = JsValue::null();
-
-        OBJECTS.with(|objects| {
-            let objects = objects.borrow();
-
-            let args = Array::new();
-
-            for object_id in ids.iter() {
-                let id = JsValue::from(object_id).as_f64().unwrap() as usize;
-
-                if let Some(found) = objects.get(&id) {
-                    args.push(found);
-                } else {
-                    return;
-                }
-            }
-            f.call1(&this_ref, &args).unwrap();
-        });
-    }
-
-    pub fn find_objs_with_type(_type_name: &JsString) -> Vec<usize> {
-        unimplemented!()
-    }
-
-    pub fn find_obj_with_type(_type_name: &JsString) -> usize {
-        unimplemented!()
-    }
-}
-
-fn get_js_obj_name(x: &JsValue) -> String {
-    let proto = js_sys::Object::get_prototype_of(x);
-    let constructor = proto.constructor();
-    constructor.name().as_string().unwrap()
-}
-
-fn add_type(name: String, id: usize) {
-    OBJECTS_INDEX.with(|index| {
-        let mut index = index.borrow_mut();
-        if let Some(inner) = index.types.get_mut(&name) {
-            inner.push(id);
-        } else {
-            index.types.insert(name, Box::new(vec![id]));
-        }
-    });
 }
