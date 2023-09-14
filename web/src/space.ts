@@ -2,14 +2,12 @@ import {GameObject} from "./GameObject.ts";
 
 export class SpaceInvaders extends GameObject {
 
-    player = new Player();
-    aliens: Alien[] = [];
+    player: Player
+    controller: AlienControl
 
     init(): void {
-        for (let i = 0; i < 5; i++) {
-            const alien = new Alien();
-            this.aliens.push(alien)
-        }
+        this.controller = new AlienControl();
+        this.player = new Player();
     }
 
     update(delta: number): void {
@@ -17,6 +15,10 @@ export class SpaceInvaders extends GameObject {
 }
 
 class Alien extends GameObject {
+    constructor(parent: GameObject)
+    {
+        super(parent);
+    }
     init(): void {
     }
 
@@ -33,7 +35,14 @@ class Player extends GameObject {
 }
 
 class AlienControl extends GameObject {
+
+    aliens: Alien[] = [];
+    
     init(): void {
+        for (let i = 0; i < 5; i++) {
+            const alien = new Alien(this);
+            this.aliens.push(alien)
+        }
     }
 
     update(delta: number): void {

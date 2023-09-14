@@ -111,6 +111,7 @@ version = "0.1.0"
 dependencies = [
  "js-sys",
  "macroquad",
+ "trees",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -326,6 +327,12 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
+
+[[package]]
+name = "trees"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0de5f738ceab88e2491a94ddc33c3feeadfa95fedc60363ef110845df12f3878"
 
 [[package]]
 name = "ttf-parser"

@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+use trees::Tree;
 use wasm_bindgen::prelude::*;
 
 use crate::game::log;
@@ -20,9 +21,22 @@ extern "C" {
     pub fn id(this: &GameObject) -> usize;
 }
 
+struct Node {
+    id: usize,
+    transform: Transform,
+}
+
+#[derive(Default)]
+struct Transform {
+    pos_x: f32,
+    pos_y: f32,
+    g_pos_x: f32,
+    g_pos_y: f32,
+}
+
 pub struct Graph {
-    graph: HashMap<usize, Vec<usize>>,
     objects: HashMap<usize, GameObject>,
+    tree: Tree<Node>,
 }
 
 thread_local! {
@@ -33,12 +47,22 @@ static mut ADD_OBJECTS: Vec<(usize, GameObject)> = vec![];
 
 impl Graph {
     pub fn new() -> Self {
-        let mut graph = HashMap::new();
-        graph.insert(0, vec![]);
         Self {
-            graph,
             objects: HashMap::new(),
+            tree: Tree::new(Node { id: 0, transform: Transform::default() }),
         }
+    }
+
+    pub fn add(&mut self, parent_id: usize, child: GameObject) {
+        let child_id = child.id();
+        self.tree.iter_mut().find(|node| node.data().id == parent_id)
+            .and_then(|node| {
+                node.get_mut().push_back(Tree::new(Node { id: child_id, transform: Transform::default() }));
+                None::<Node>
+            });
+        // self.tree.push_back(Tree::new(Node {id: child_id, transform: Transform::default()}));
+        self.objects.insert(child_id, child);
+        log(&format!("adding {parent_id} -> {child_id}"));
     }
 }
 
@@ -62,7 +86,7 @@ impl Scene {
             DEL_OBJECTS.drain(..).for_each(|x| {
                 SCENE_GRAPH.with(|graph| {
                     let mut graph = graph.borrow_mut();
-                    graph.graph.remove(&x.id());
+                    // graph.graph.remove(&x.id());
                     // TODO get parent and fix that up
                     // if let Some(inner) = graph.graph.get()
                     graph.objects.remove(&x.id());
@@ -89,11 +113,7 @@ impl Scene {
                 SCENE_GRAPH.with(|graph| {
                     let mut graph = graph.borrow_mut();
                     temp.into_iter().for_each(|(parent_id, child)| {
-                        let child_id = child.id();
-                        let mut children = graph.graph.entry(parent_id).or_default();
-                        children.push(child.id());
-                        graph.objects.insert(child_id, child);
-                        log(&format!("adding {parent_id} -> {child_id}"));
+                        graph.add(parent_id, child);
                     });
                 });
             }
