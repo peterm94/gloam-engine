@@ -1,7 +1,7 @@
 import {GameObject} from "./GameObject.ts";
 import alien from "./art/aliens.png?url";
 import {Textures} from "./Texture";
-import {Gloam} from "../../dist";
+import {Gloam} from "gloam-engine";
 export async function start()
 {
     await Textures.load_texture("alien", alien)

@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 
-use id_tree::{InsertBehavior, Node, Tree};
+use petgraph::prelude::*;
+use petgraph::visit::IntoNodeReferences;
 use wasm_bindgen::prelude::*;
 
 use crate::game::log;
@@ -35,42 +36,51 @@ struct Transform {
     g_pos_y: f32,
 }
 
-pub struct Graph {
-    tree: Tree<GNode>,
+pub struct GloamGraph {
+    graph: Graph<GNode, ()>,
+    root: NodeIndex,
 }
 
 thread_local! {
-pub static SCENE_GRAPH: RefCell<Graph> = RefCell::new(Graph::new());
+pub static SCENE_GRAPH: RefCell<GloamGraph> = RefCell::new(GloamGraph::new());
 }
-static mut DEL_OBJECTS: Vec<GameObject> = vec![];
+static mut DEL_OBJECTS: Vec<usize> = vec![];
 static mut ADD_OBJECTS: Vec<(usize, GameObject)> = vec![];
 
-impl Graph {
+impl GloamGraph {
     pub fn new() -> Self {
+        let mut graph = Graph::<GNode, ()>::new();
+
         let root = GNode { id: 0, transform: Transform::default(), object: None };
-        let mut tree = Tree::new();
-        tree.insert(Node::new(root), InsertBehavior::AsRoot).unwrap();
-        Self { tree }
+        let root_idx = graph.add_node(root);
+
+        Self { graph, root: root_idx }
     }
 
     pub fn add(&mut self, parent_id: usize, child: GameObject) {
         let child_id = child.id();
 
-        let new_node = Node::new(GNode { id: child_id, transform: Transform::default(), object: Some(child) });
-        if parent_id == 0 {
-            self.tree.insert()
-            self.tree.push_back(new_node);
-            log(&format!("adding {parent_id} -> {child_id}"));
+        let new_node = GNode { id: child_id, transform: Transform::default(), object: Some(child) };
+        let new_node_idx = self.graph.add_node(new_node);
+        let mut bfs = Bfs::new(&self.graph, self.root);
+        while let Some(nx) = bfs.next(&self.graph) {
+            if self.graph[nx].id == parent_id {
+                self.graph.add_edge(nx, new_node_idx, ());
+            }
             return;
         }
+        log(&format!("could not find parent with id {parent_id}, object not inserted."));
+    }
 
-        let mut node = &self.tree;
-
-        if let Some(node) = self.tree.bfs_children_mut().iter.find(|node| node.data.id == parent_id) {
-
-            // node.push_back(new_node);
-            log(&format!("adding {parent_id} -> {child_id}"));
+    pub fn remove(&mut self, object_id: usize) {
+        let mut bfs = Bfs::new(&self.graph, self.root);
+        while let Some(nx) = bfs.next(&self.graph) {
+            if self.graph[nx].id == object_id {
+                self.graph.remove_node(nx);
+                return;
+            }
         }
+        log(&format!("could not find node with id {object_id}, object not deleted."));
     }
 }
 
@@ -83,8 +93,8 @@ impl Scene {
         unsafe { ADD_OBJECTS.push((parent_id, child)); }
     }
 
-    pub fn remove_object(object: GameObject) {
-        unsafe { DEL_OBJECTS.push(object); }
+    pub fn remove_object(object_id: usize) {
+        unsafe { DEL_OBJECTS.push(object_id); }
     }
 }
 
@@ -93,24 +103,26 @@ impl Scene {
         unsafe {
             DEL_OBJECTS.drain(..).for_each(|x| {
                 SCENE_GRAPH.with(|graph| {
-                    let mut graph = graph.borrow_mut();
-                    // graph.graph.remove(&x.id());
-                    // TODO get parent and fix that up
-                    // if let Some(inner) = graph.graph.get()
-                    // graph.objects.remove(&x.id());
+                    let mut temp = vec![];
+                    temp.append(&mut DEL_OBJECTS);
+
+                    SCENE_GRAPH.with(|graph| {
+                        let mut graph = graph.borrow_mut();
+                        temp.into_iter().for_each(|x| {
+                            graph.remove(x);
+                        });
+                    });
                 });
             })
         }
 
         SCENE_GRAPH.with(|graph| {
             let graph = graph.borrow();
-            for obj in graph.tree.bfs_children().iter
-            {
-                log(&format!("{}", obj.data.id));
-                if let Some(object) = &obj.data.object {
+            graph.graph.node_references().for_each(|(idx, node)| {
+                if let Some(object) = &node.object {
                     object.update(delta);
                 }
-            }
+            });
         });
 
         unsafe {
@@ -131,21 +143,5 @@ impl Scene {
                 });
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let mut tree = Tree::new(0);
-        let mut tree2 = Tree::new(3);
-        tree.push_back(Tree::new(1));
-        tree2.push_back(Tree::new(2));
-        tree.push_back(tree2);
-
-        tree.bfs_children().iter.for_each(|x| println!("{}", x.data))
     }
 }

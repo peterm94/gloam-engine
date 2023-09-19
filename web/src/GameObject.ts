@@ -1,8 +1,4 @@
 import {Scene, Transform} from "gloam-engine"
-import {SpaceInvaders} from "./space.ts";
-
-class Transform {
-}
 
 export abstract class GameObject {
     private static id_count = 0;
