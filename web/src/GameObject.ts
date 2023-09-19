@@ -4,7 +4,7 @@ export abstract class GameObject {
     private static id_count = 0;
 
     _id: number = ++GameObject.id_count;
-    transform: Transform
+    transform: Transform = new Transform();
     parent: number
 
     id(): number {

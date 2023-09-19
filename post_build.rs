@@ -16,6 +16,7 @@ fn main() {
         .input_path(wasm_target)
         .debug(true)
         .typescript(true)
+        .reference_types(true)
         .web(true).unwrap()
         .generate(&dist_dir)
         .expect("wasm-bindgen failed.");

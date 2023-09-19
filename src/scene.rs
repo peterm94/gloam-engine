@@ -29,11 +29,19 @@ struct GNode {
 
 #[wasm_bindgen]
 #[derive(Default)]
-struct Transform {
-    pos_x: f32,
-    pos_y: f32,
-    g_pos_x: f32,
-    g_pos_y: f32,
+pub struct Transform {
+    pub pos_x: f32,
+    pub pos_y: f32,
+    pub g_pos_x: f32,
+    pub g_pos_y: f32,
+}
+
+#[wasm_bindgen]
+impl Transform {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 pub struct GloamGraph {
@@ -55,6 +63,13 @@ impl GloamGraph {
         let root_idx = graph.add_node(root);
 
         Self { graph, root: root_idx }
+    }
+
+    pub fn get_transform(&self, object_id: usize) -> Option<&Transform> {
+        if let Some((_, node)) = self.graph.node_references().find(|(_, node)| node.id == object_id) {
+            return Some(&node.transform);
+        }
+        None
     }
 
     pub fn add(&mut self, parent_id: usize, child: GameObject) {
@@ -101,19 +116,17 @@ impl Scene {
 impl Scene {
     pub fn update(delta: f64) {
         unsafe {
-            DEL_OBJECTS.drain(..).for_each(|x| {
-                SCENE_GRAPH.with(|graph| {
-                    let mut temp = vec![];
-                    temp.append(&mut DEL_OBJECTS);
+            if !DEL_OBJECTS.is_empty() {
+                let mut temp = vec![];
+                temp.append(&mut DEL_OBJECTS);
 
-                    SCENE_GRAPH.with(|graph| {
-                        let mut graph = graph.borrow_mut();
-                        temp.into_iter().for_each(|x| {
-                            graph.remove(x);
-                        });
+                SCENE_GRAPH.with(|graph| {
+                    let mut graph = graph.borrow_mut();
+                    temp.into_iter().for_each(|x| {
+                        graph.remove(x);
                     });
                 });
-            })
+            }
         }
 
         SCENE_GRAPH.with(|graph| {
