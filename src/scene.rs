@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use trees::Tree;
+use id_tree::{InsertBehavior, Node, Tree};
 use wasm_bindgen::prelude::*;
 
 use crate::game::log;
@@ -47,16 +47,18 @@ static mut ADD_OBJECTS: Vec<(usize, GameObject)> = vec![];
 
 impl Graph {
     pub fn new() -> Self {
-        Self {
-            tree: Tree::new(GNode { id: 0, transform: Transform::default(), object: None }),
-        }
+        let root = GNode { id: 0, transform: Transform::default(), object: None };
+        let mut tree = Tree::new();
+        tree.insert(Node::new(root), InsertBehavior::AsRoot).unwrap();
+        Self { tree }
     }
 
     pub fn add(&mut self, parent_id: usize, child: GameObject) {
         let child_id = child.id();
 
-        let new_node = Tree::new(GNode { id: child_id, transform: Transform::default(), object: Some(child) });
+        let new_node = Node::new(GNode { id: child_id, transform: Transform::default(), object: Some(child) });
         if parent_id == 0 {
+            self.tree.insert()
             self.tree.push_back(new_node);
             log(&format!("adding {parent_id} -> {child_id}"));
             return;
@@ -64,7 +66,7 @@ impl Graph {
 
         let mut node = &self.tree;
 
-         if let Some(node) = self.tree.bfs_children_mut().iter.find(|node| node.data.id == parent_id) {
+        if let Some(node) = self.tree.bfs_children_mut().iter.find(|node| node.data.id == parent_id) {
 
             // node.push_back(new_node);
             log(&format!("adding {parent_id} -> {child_id}"));

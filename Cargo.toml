@@ -11,7 +11,7 @@ macroquad = "0.4.4"
 wasm-bindgen = "0.2.87"
 wasm-bindgen-futures = "0.4.37"
 js-sys = "0.3.59"
-trees = "0.4.2"
+id_tree = "1.8.0"
 
 [dependencies.web-sys]
 version = "0.3.64"
