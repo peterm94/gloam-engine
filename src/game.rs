@@ -8,7 +8,9 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, Response};
 use web_sys::console::log_1;
 
+use crate::CURRENT_SCENE;
 use crate::events::EventSub;
+use crate::scene::SceneWrapper;
 
 #[wasm_bindgen(typescript_custom_section)]
 const SCRIPT: &'static str = r#"
@@ -20,8 +22,6 @@ pub static EVENTS: RefCell<HashMap<String, Vec<EventSub>>> = RefCell::new(HashMa
 }
 
 pub static mut TEXTURES: Vec<Texture2D> = vec![];
-pub static mut DEL_OBJECTS: Vec<usize> = vec![];
-
 
 #[wasm_bindgen]
 pub struct Gloam {}
@@ -32,6 +32,9 @@ pub fn log(str: &String) {
 
 #[wasm_bindgen]
 impl Gloam {
+    pub fn register_scene(wrapper: SceneWrapper) {
+        unsafe { CURRENT_SCENE = Some(wrapper) };
+    }
     pub async fn load_texture(img_url: &str) -> usize {
         let request = Request::new_with_str(img_url).unwrap();
 

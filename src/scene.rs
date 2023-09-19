@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use wasm_bindgen::prelude::*;
@@ -19,6 +17,12 @@ extern "C" {
 
     #[wasm_bindgen(structural, method)]
     pub fn id(this: &GameObject) -> usize;
+
+    #[wasm_bindgen(typescript_type = "SceneWrapper")]
+    pub type SceneWrapper;
+
+    #[wasm_bindgen(structural, method)]
+    pub fn update(this: &SceneWrapper, delta: f32);
 }
 
 struct GNode {
@@ -48,12 +52,6 @@ pub struct GloamGraph {
     graph: Graph<GNode, ()>,
     root: NodeIndex,
 }
-
-thread_local! {
-pub static SCENE_GRAPH: RefCell<GloamGraph> = RefCell::new(GloamGraph::new());
-}
-static mut DEL_OBJECTS: Vec<usize> = vec![];
-static mut ADD_OBJECTS: Vec<(usize, GameObject)> = vec![];
 
 impl GloamGraph {
     pub fn new() -> Self {
@@ -100,61 +98,61 @@ impl GloamGraph {
 }
 
 #[wasm_bindgen]
-pub struct Scene;
+pub struct NextFrame {
+    add_objects: Vec<(usize, GameObject)>,
+    del_objects: Vec<usize>,
+}
 
 #[wasm_bindgen]
-impl Scene {
-    pub fn add_child(parent_id: usize, child: GameObject) {
-        unsafe { ADD_OBJECTS.push((parent_id, child)); }
+impl NextFrame {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self { add_objects: vec![], del_objects: vec![] }
     }
 
-    pub fn remove_object(object_id: usize) {
-        unsafe { DEL_OBJECTS.push(object_id); }
+    pub fn add_child(&mut self, parent_id: usize, child: GameObject) {
+        self.add_objects.push((parent_id, child));
+    }
+
+    pub fn remove_object(&mut self, object_id: usize) {
+        self.del_objects.push(object_id);
     }
 }
 
-impl Scene {
-    pub fn update(delta: f64) {
-        unsafe {
-            if !DEL_OBJECTS.is_empty() {
-                let mut temp = vec![];
-                temp.append(&mut DEL_OBJECTS);
+#[wasm_bindgen]
+pub struct Scene {
+    graph: GloamGraph,
+}
 
-                SCENE_GRAPH.with(|graph| {
-                    let mut graph = graph.borrow_mut();
-                    temp.into_iter().for_each(|x| {
-                        graph.remove(x);
-                    });
-                });
-            }
+#[wasm_bindgen]
+impl Scene {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self { graph: GloamGraph::new() }
+    }
+}
+
+#[wasm_bindgen]
+impl Scene {
+    pub fn update(&mut self, mut next_frame: NextFrame, delta: f64) {
+        if !next_frame.del_objects.is_empty() {
+            next_frame.del_objects.drain(..).for_each(|x| self.graph.remove(x));
         }
 
-        SCENE_GRAPH.with(|graph| {
-            let graph = graph.borrow();
-            graph.graph.node_references().for_each(|(idx, node)| {
-                if let Some(object) = &node.object {
-                    object.update(delta);
-                }
-            });
+        self.graph.graph.node_references().for_each(|(_, node)| {
+            if let Some(object) = &node.object {
+                object.update(delta);
+            }
         });
 
-        unsafe {
-            if !ADD_OBJECTS.is_empty() {
-                // TODO we can do some mem swapping probably to avoid a copy and alloc each time
-                let mut temp = vec![];
-                temp.append(&mut ADD_OBJECTS);
+        if !next_frame.add_objects.is_empty() {
 
-                // Initialize
-                temp.iter().for_each(|(_, x)| { x.init() });
-
-                // Insert in the graph
-                SCENE_GRAPH.with(|graph| {
-                    let mut graph = graph.borrow_mut();
-                    temp.into_iter().for_each(|(parent_id, child)| {
-                        graph.add(parent_id, child);
-                    });
-                });
-            }
+            // TODO check the order of this.
+            next_frame.add_objects.iter().for_each(|(_, x)| x.init());
+            // Insert in the graph
+            next_frame.add_objects.drain(..).for_each(|(parent_id, child)| {
+                self.graph.add(parent_id, child);
+            });
         }
     }
 }
