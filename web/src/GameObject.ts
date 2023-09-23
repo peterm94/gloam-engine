@@ -1,46 +1,39 @@
-import {NextFrame, Scene as GloamScene, Transform} from "gloam-engine"
+import {GloamWasm, Transform} from "gloam-engine"
 
-
-interface SceneWrapper {
+interface Scene {
     add_object<T extends GameObject>(object: T): T;
-    remove_object(object_id: number): void;
 
-    update(delta: number): void;
+    remove_object(object_id: number): void;
 }
 
-export class DumbScene implements SceneWrapper {
+export class DumbScene implements Scene {
     add_object<T extends GameObject>(object: T): T {
         throw new Error("You need to add the object to the scene before you can use it.")
-    }
-
-    update(delta: number) {
-        throw new Error("Don't use this")
     }
 
     remove_object(object_id: number): void {
         throw new Error("You need to add the object to the scene before you can use it.")
     }
 }
-export class Scene implements SceneWrapper {
-    scene: GloamScene = new GloamScene();
-    next_frame: NextFrame = new NextFrame();
+
+export class GloamWrapper {
+    static scene: Scene = new DumbScene();
+}
+
+export class GloamScene implements Scene {
+
+    constructor(private ref: GloamWasm) {
+
+    }
 
     add_object<T extends GameObject>(object: T): T {
-        this.next_frame.add_child(0, object);
         object.scene = this;
+        this.ref.add_object(object);
         return object;
     }
 
-    update(delta: number) {
-        const temp = this.next_frame;
-        // TODO we probably only need to trigger this if we have actually done something.
-        // TODO we can probably split out add/remove and only call if we have batched stuff.
-        this.next_frame = new NextFrame();
-        this.scene.update(temp, delta);
-    }
-
     remove_object(object_id: number): void {
-        this.next_frame.remove_object(object_id);
+        this.ref.remove_object(object_id);
     }
 }
 
@@ -50,7 +43,7 @@ export abstract class GameObject {
     _id: number = ++GameObject.id_count;
     transform: Transform = new Transform();
     parent: number
-    scene: SceneWrapper = new DumbScene();
+    scene: Scene = GloamWrapper.scene;
 
     id(): number {
         return this._id;

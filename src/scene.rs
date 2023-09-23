@@ -1,8 +1,13 @@
+use std::cell::RefCell;
+use std::mem;
+use std::rc::Rc;
+
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use wasm_bindgen::prelude::*;
 
 use crate::game::log;
+use crate::GameState;
 
 #[wasm_bindgen]
 extern "C" {
@@ -100,22 +105,29 @@ impl GloamGraph {
 #[wasm_bindgen]
 pub struct Scene {
     graph: GloamGraph,
+    state: Rc<RefCell<GameState>>,
+
+    add_objects: Vec<(usize, GameObject)>,
+    del_objects: Vec<usize>,
 }
 
-#[wasm_bindgen]
 impl Scene {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
-        Self { graph: GloamGraph::new() }
+    pub fn new(state: Rc<RefCell<GameState>>) -> Self {
+        Self {
+            graph: GloamGraph::new(),
+            state,
+            add_objects: vec![],
+            del_objects: vec![],
+        }
     }
 }
 
 #[wasm_bindgen]
 impl Scene {
     pub fn update(&mut self, delta: f32) {
-        let mut next_frame = NextFrame::new();
-        if !next_frame.del_objects.is_empty() {
-            next_frame.del_objects.drain(..).for_each(|x| self.graph.remove(x));
+        if !self.state.borrow().del_objects.is_empty() {
+            mem::swap(&mut self.del_objects, &mut self.state.borrow_mut().del_objects);
+            self.del_objects.drain(..).for_each(|x| self.graph.remove(x));
         }
 
         self.graph.graph.node_references().for_each(|(_, node)| {
@@ -124,13 +136,12 @@ impl Scene {
             }
         });
 
-        if !next_frame.add_objects.is_empty() {
-
-            // TODO check the order of this.
-            next_frame.add_objects.iter().for_each(|(_, x)| x.init());
-            // Insert in the graph
-            next_frame.add_objects.drain(..).for_each(|(parent_id, child)| {
-                self.graph.add(parent_id, child);
+        // TODO do I need to init in a separate loop?
+        if !self.state.borrow().add_objects.is_empty() {
+            mem::swap(&mut self.add_objects, &mut self.state.borrow_mut().add_objects);
+            self.add_objects.drain(..).for_each(|(parent, child)| {
+                child.init();
+                self.graph.add(parent, child);
             });
         }
     }

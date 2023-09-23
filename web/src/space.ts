@@ -1,4 +1,4 @@
-import {GameObject, Scene} from "./GameObject.ts";
+import {GameObject, GloamScene, GloamWrapper} from "./GameObject.ts";
 import alien from "./art/aliens.png?url";
 import {Textures} from "./Texture";
 import {Gloam} from "gloam-engine";
@@ -6,11 +6,10 @@ import {Gloam} from "gloam-engine";
 export async function start() {
     await Textures.load_texture("alien", alien)
 
-    const scene = new Scene();
+    const ref = Gloam.start();
+    GloamWrapper.scene = new GloamScene(ref);
 
-    Gloam.register_scene(scene);
-
-    scene.add_object(new SpaceInvaders());
+    ref.add_object(new SpaceInvaders());
 }
 
 
@@ -18,13 +17,24 @@ export class SpaceInvaders extends GameObject {
     player: Player
     controller: AlienControl
 
+    frame = 0;
+    fps = 0;
+    last_frames = Array(1000).fill(0.001);
+
     init(): void {
         this.controller = this.scene.add_object(new AlienControl());
         this.player = this.scene.add_object(new Player());
     }
 
     update(delta: number): void {
-        console.log("hello")
+
+        this.last_frames.push(delta);
+        this.last_frames.shift();
+
+        let avg = this.last_frames.reduce((a, b) => a + b) / this.last_frames.length;
+
+        Gloam.draw_text(`${Math.trunc(1000 / avg / 1000)}fps`, 100, 100, 100, 0xFFFFFF);
+
     }
 }
 
