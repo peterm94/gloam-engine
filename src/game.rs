@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use js_sys::{ArrayBuffer, Uint8Array};
 use macroquad::prelude::*;
@@ -10,7 +11,7 @@ use web_sys::console::log_1;
 
 use crate::CURRENT_SCENE;
 use crate::events::EventSub;
-use crate::scene::SceneWrapper;
+use crate::scene::{GameObject, Scene, SceneWrapper};
 
 #[wasm_bindgen(typescript_custom_section)]
 const SCRIPT: &'static str = r#"
@@ -31,9 +32,33 @@ pub fn log(str: &String) {
 }
 
 #[wasm_bindgen]
+pub struct SceneRef {
+    scene: Rc<RefCell<Scene>>,
+    add_objects: Vec<(usize, GameObject)>,
+    del_objects: Vec<usize>,
+}
+#[wasm_bindgen]
+impl SceneRef{
+    pub fn add_child(&mut self, parent_id: usize, child: GameObject) {
+        self.add_objects.push((parent_id, child));
+    }
+
+    pub fn remove_object(&mut self, object_id: usize) {
+        self.del_objects.push(object_id);
+    }
+
+    fn new(scene: Rc<RefCell<Scene>>) -> Self {
+        Self { add_objects: vec![], del_objects: vec![], scene }
+    }
+}
+
+#[wasm_bindgen]
 impl Gloam {
-    pub fn register_scene(wrapper: SceneWrapper) {
-        unsafe { CURRENT_SCENE = Some(wrapper) };
+    pub fn register_scene() -> SceneRef {
+        let scene = Rc::new(RefCell::new(Scene::new()));
+        unsafe { CURRENT_SCENE = Some(scene.clone()) };
+
+        return SceneRef::new(scene);
     }
     pub async fn load_texture(img_url: &str) -> usize {
         let request = Request::new_with_str(img_url).unwrap();

@@ -10,7 +10,7 @@ extern "C" {
     pub type GameObject;
 
     #[wasm_bindgen(structural, method)]
-    pub fn update(this: &GameObject, delta: f64);
+    pub fn update(this: &GameObject, delta: f32);
 
     #[wasm_bindgen(structural, method)]
     pub fn init(this: &GameObject);
@@ -98,28 +98,6 @@ impl GloamGraph {
 }
 
 #[wasm_bindgen]
-pub struct NextFrame {
-    add_objects: Vec<(usize, GameObject)>,
-    del_objects: Vec<usize>,
-}
-
-#[wasm_bindgen]
-impl NextFrame {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
-        Self { add_objects: vec![], del_objects: vec![] }
-    }
-
-    pub fn add_child(&mut self, parent_id: usize, child: GameObject) {
-        self.add_objects.push((parent_id, child));
-    }
-
-    pub fn remove_object(&mut self, object_id: usize) {
-        self.del_objects.push(object_id);
-    }
-}
-
-#[wasm_bindgen]
 pub struct Scene {
     graph: GloamGraph,
 }
@@ -134,7 +112,8 @@ impl Scene {
 
 #[wasm_bindgen]
 impl Scene {
-    pub fn update(&mut self, mut next_frame: NextFrame, delta: f64) {
+    pub fn update(&mut self, delta: f32) {
+        let mut next_frame = NextFrame::new();
         if !next_frame.del_objects.is_empty() {
             next_frame.del_objects.drain(..).for_each(|x| self.graph.remove(x));
         }

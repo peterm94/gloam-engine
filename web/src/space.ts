@@ -57,12 +57,13 @@ class AlienControl extends GameObject {
     aliens: Alien[] = [];
 
     init(): void {
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 10000; i++) {
             const alien = this.scene.add_object(new Alien(this));
             this.aliens.push(alien)
         }
     }
 
     update(delta: number): void {
+        console.log(delta * 1000    );
     }
 }

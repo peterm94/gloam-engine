@@ -69,11 +69,3 @@ export abstract class GameObject {
 
     abstract update(delta: number): void;
 }
-
-class A extends GameObject {
-    init(): void {
-    }
-
-    update(delta: number): void {
-    }
-}
