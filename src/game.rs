@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::mem;
 use std::rc::Rc;
 
 use js_sys::{ArrayBuffer, Uint8Array};
@@ -12,7 +11,7 @@ use web_sys::console::log_1;
 
 use crate::{CURRENT_SCENE, GameState};
 use crate::events::EventSub;
-use crate::scene::{GameObject, Scene};
+use crate::scene::{GameObject, Scene, Transform};
 
 #[wasm_bindgen(typescript_custom_section)]
 const SCRIPT: &'static str = r#"
@@ -33,24 +32,26 @@ pub fn log(str: &String) {
 }
 
 #[wasm_bindgen]
-pub struct SceneRef {
-    scene: Rc<RefCell<Scene>>,
-    add_objects: Vec<(usize, GameObject)>,
-    del_objects: Vec<usize>,
-}
-#[wasm_bindgen]
 impl GloamWasm {
-    pub fn add_child(&mut self, parent_id: usize, child: GameObject) {
-        self.state.borrow_mut().add_objects.push((parent_id, child));
+    pub fn add_child(&mut self, parent_id: usize, child: GameObject) -> TransformWasm {
+        let transform = Transform::new();
+
+        self.state.borrow_mut().add_objects.push((parent_id, child, transform.clone()));
+        return TransformWasm { transform };
     }
 
-    pub fn add_object(&mut self, object: GameObject) {
-        self.state.borrow_mut().add_objects.push((0, object));
+    pub fn add_object(&mut self, object: GameObject) -> TransformWasm {
+        self.add_child(0, object)
     }
 
     pub fn remove_object(&mut self, object_id: usize) {
         self.state.borrow_mut().del_objects.push(object_id);
     }
+}
+
+#[wasm_bindgen]
+pub struct TransformWasm {
+    transform: Rc<RefCell<Transform>>,
 }
 
 #[wasm_bindgen]

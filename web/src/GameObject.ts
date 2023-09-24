@@ -1,59 +1,74 @@
-import {GloamWasm, Transform} from "gloam-engine"
+import {GloamWasm, TransformWasm} from "gloam-engine"
 
-interface Scene {
+interface Scene
+{
     add_object<T extends GameObject>(object: T): T;
 
     remove_object(object_id: number): void;
 }
 
-export class DumbScene implements Scene {
-    add_object<T extends GameObject>(object: T): T {
+export class DumbScene implements Scene
+{
+    add_object<T extends GameObject>(object: T): T
+    {
         throw new Error("You need to add the object to the scene before you can use it.")
     }
 
-    remove_object(object_id: number): void {
+    remove_object(object_id: number): void
+    {
         throw new Error("You need to add the object to the scene before you can use it.")
     }
 }
 
-export class GloamWrapper {
+export class GloamWrapper
+{
     static scene: Scene = new DumbScene();
 }
 
-export class GloamScene implements Scene {
+export class GloamScene implements Scene
+{
+    private transform: TransformWasm;
 
-    constructor(private ref: GloamWasm) {
+    constructor(private ref: GloamWasm)
+    {
 
     }
 
-    add_object<T extends GameObject>(object: T): T {
+    add_object<T extends GameObject>(object: T): T
+    {
         object.scene = this;
-        this.ref.add_object(object);
+        object.transform = this.ref.add_object(object);
         return object;
     }
 
-    remove_object(object_id: number): void {
+    remove_object(object_id: number): void
+    {
         this.ref.remove_object(object_id);
     }
 }
 
-export abstract class GameObject {
+export abstract class GameObject
+{
     private static id_count = 0;
 
-    _id: number = ++GameObject.id_count;
-    transform: Transform = new Transform();
+    readonly _id: number = ++GameObject.id_count;
+
+    transform: TransformWasm
     parent: number
     scene: Scene = GloamWrapper.scene;
 
-    id(): number {
+    id(): number
+    {
         return this._id;
     }
 
-    destroy() {
+    destroy()
+    {
         this.scene.remove_object(this._id);
     }
 
-    constructor(parent?: GameObject) {
+    constructor(parent?: GameObject)
+    {
         const parent_id = (parent === undefined) ? 0 : parent.id();
         // Scene.add_child(parent_id, this);
     }

@@ -32,24 +32,22 @@ extern "C" {
 
 struct GNode {
     id: usize,
-    transform: Transform,
+    transform: Rc<RefCell<Transform>>,
     object: Option<GameObject>,
 }
 
-#[wasm_bindgen]
 #[derive(Default)]
 pub struct Transform {
     pub pos_x: f32,
     pub pos_y: f32,
     pub g_pos_x: f32,
     pub g_pos_y: f32,
+    pub dirty: bool,
 }
 
-#[wasm_bindgen]
 impl Transform {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new() -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self { dirty: true, ..Self::default() }))
     }
 }
 
@@ -62,23 +60,23 @@ impl GloamGraph {
     pub fn new() -> Self {
         let mut graph = Graph::<GNode, ()>::new();
 
-        let root = GNode { id: 0, transform: Transform::default(), object: None };
+        let root = GNode { id: 0, transform: Transform::new(), object: None };
         let root_idx = graph.add_node(root);
 
         Self { graph, root: root_idx }
     }
 
-    pub fn get_transform(&self, object_id: usize) -> Option<&Transform> {
-        if let Some((_, node)) = self.graph.node_references().find(|(_, node)| node.id == object_id) {
-            return Some(&node.transform);
-        }
-        None
-    }
+    // pub fn get_transform(&self, object_id: usize) -> Option<&Transform> {
+    //     if let Some((_, node)) = self.graph.node_references().find(|(_, node)| node.id == object_id) {
+    //         return Some(&node.transform);
+    //     }
+    //     None
+    // }
 
-    pub fn add(&mut self, parent_id: usize, child: GameObject) {
+    pub fn add(&mut self, parent_id: usize, child: GameObject, transform: Rc<RefCell<Transform>>) {
         let child_id = child.id();
 
-        let new_node = GNode { id: child_id, transform: Transform::default(), object: Some(child) };
+        let new_node = GNode { id: child_id, transform, object: Some(child) };
         let new_node_idx = self.graph.add_node(new_node);
         let mut bfs = Bfs::new(&self.graph, self.root);
         while let Some(nx) = bfs.next(&self.graph) {
@@ -107,7 +105,7 @@ pub struct Scene {
     graph: GloamGraph,
     state: Rc<RefCell<GameState>>,
 
-    add_objects: Vec<(usize, GameObject)>,
+    add_objects: Vec<(usize, GameObject, Rc<RefCell<Transform>>)>,
     del_objects: Vec<usize>,
 }
 
@@ -130,6 +128,7 @@ impl Scene {
             self.del_objects.drain(..).for_each(|x| self.graph.remove(x));
         }
 
+        // self.graph.graph
         self.graph.graph.node_references().for_each(|(_, node)| {
             if let Some(object) = &node.object {
                 object.update(delta);
@@ -139,10 +138,52 @@ impl Scene {
         // TODO do I need to init in a separate loop?
         if !self.state.borrow().add_objects.is_empty() {
             mem::swap(&mut self.add_objects, &mut self.state.borrow_mut().add_objects);
-            self.add_objects.drain(..).for_each(|(parent, child)| {
+            self.add_objects.drain(..).for_each(|(parent, child, transform)| {
                 child.init();
-                self.graph.add(parent, child);
+                self.graph.add(parent, child, transform);
             });
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use petgraph::algo::toposort;
+    use super::*;
+
+    #[test]
+    fn test_order() {
+        let mut graph: Graph<&str, usize> = Graph::new();
+        let n_root = graph.add_node("root");
+        let n_1 = graph.add_node("1");
+        let n_3 = graph.add_node("3");
+        let n_2 = graph.add_node("2");
+        let n_4 = graph.add_node("4");
+        let n_7 = graph.add_node("7");
+        let n_5 = graph.add_node("5");
+        let n_10 = graph.add_node("10");
+        let n_9 = graph.add_node("9");
+
+        graph.add_edge(n_root, n_1, 1);
+        graph.add_edge(n_root, n_3, 3);
+        graph.add_edge(n_root, n_2, 2);
+        graph.add_edge(n_root, n_4, 4);
+        graph.add_edge(n_root, n_7, 7);
+        graph.add_edge(n_root, n_5, 5);
+        graph.add_edge(n_root, n_10, 10);
+        graph.add_edge(n_root, n_9, 9);
+
+        let mut bfs = Bfs::new(&graph, n_root);
+        while let Some(nx) = bfs.next(&graph) {
+            println!("{} - {}", nx.index(), graph[nx])
+        }
+
+        println!("for");
+        graph.node_references().for_each(|(_, x)|println!("{}", x));
+        println!("topo");
+
+        for x in toposort(&graph, None).unwrap() {
+            println!("{} - {}", x.index(), graph[x])
         }
     }
 }
