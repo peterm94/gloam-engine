@@ -1,10 +1,13 @@
 import {GameObject, GloamScene, GloamWrapper} from "./GameObject.ts";
 import alien from "./art/aliens.png?url";
+import player from "./art/player.png?url";
 import {Textures} from "./Texture";
 import {Gloam} from "gloam-engine";
+import * as keyboardjs from "keyboardjs";
 
 export async function start() {
     await Textures.load_texture("alien", alien)
+    await Textures.load_texture("player", player)
 
     const ref = Gloam.start();
     GloamWrapper.scene = new GloamScene(ref);
@@ -17,8 +20,6 @@ export class SpaceInvaders extends GameObject {
     player: Player
     controller: AlienControl
 
-    frame = 0;
-    fps = 0;
     last_frames = Array(1000).fill(0.001);
     col = 0;
 
@@ -57,11 +58,77 @@ class Alien extends GameObject {
 }
 
 class Player extends GameObject {
+    private player_tex: number;
+
+    x = 128;
+    move_left = false;
+    move_right = false;
+    shoot = false;
+    shoot_cdr = 0;
+
+    constructor() {
+        super();
+        this.player_tex = Textures.get_tex("player");
+    }
+
+    init(): void {
+
+        keyboardjs.bind('a', event => {
+            this.move_left = true;
+        },
+        event => {
+            this.move_left = false;
+        })
+        keyboardjs.bind('d', event => {
+                this.move_right = true;
+            },
+            event => {
+                this.move_right = false;
+            })
+
+        keyboardjs.bind('space', event => {
+            this.shoot = true;
+        })
+    }
+
+    update(delta: number): void {
+
+        // Move
+        if (this.move_left === true) {
+            this.x -= delta * 100;
+        }
+
+        if (this.move_right === true) {
+            this.x += delta * 100;
+        }
+
+        // Update shoot timer
+        this.shoot_cdr -= delta;
+
+        // Shoot
+        if (this.shoot && this.shoot_cdr < 0) {
+            this.shoot = false
+            this.scene.add_object(new Bullet(this.x, 230));
+        }
+
+
+        Gloam.draw_texture(this.player_tex, this.x, 230);
+
+    }
+}
+
+class Bullet extends GameObject {
+
+    constructor(public x: number, public y: number) {
+        super();
+    }
     init(): void {
     }
 
     update(delta: number): void {
+        Gloam.draw_rectangle(this.x, this.y, 1, 2,1, 0xFFFFFF);
     }
+
 }
 
 class AlienControl extends GameObject {
@@ -69,7 +136,7 @@ class AlienControl extends GameObject {
     aliens: Alien[] = [];
 
     init(): void {
-        console.log("adding 10000 entities")
+        console.log("adding 100 entities")
         for (let i = 0; i < 100; i++) {
             const alien = this.scene.add_object(new Alien(this));
             this.aliens.push(alien)

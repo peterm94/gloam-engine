@@ -128,7 +128,6 @@ impl Scene {
             self.del_objects.drain(..).for_each(|x| self.graph.remove(x));
         }
 
-        // self.graph.graph
         self.graph.graph.node_references().for_each(|(_, node)| {
             if let Some(object) = &node.object {
                 object.update(delta);

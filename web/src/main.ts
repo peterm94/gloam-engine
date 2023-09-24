@@ -1,12 +1,10 @@
 import './style.css'
-import {Gloam, load_game} from "gloam-engine";
-import {Tests} from "./tests.ts";
-import {GameObject, GameObjectTest} from "./GameObject.ts";
-import {SpaceInvaders, start} from "./space.ts";
+import {load_game} from "gloam-engine";
+import {start} from "./space.ts";
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
-    <canvas id="glcanvas" width="1000" height="1000" tabindex='1' hidden></canvas>
+    <canvas id="glcanvas" width="256" height="256" tabindex='1' hidden></canvas>
   </div>
 `
 
