@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::mem;
 use std::rc::Rc;
 
 use js_sys::{ArrayBuffer, Uint8Array};
@@ -9,9 +10,9 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, Response};
 use web_sys::console::log_1;
 
-use crate::CURRENT_SCENE;
+use crate::{CURRENT_SCENE, GameState};
 use crate::events::EventSub;
-use crate::scene::{GameObject, Scene, SceneWrapper};
+use crate::scene::{GameObject, Scene};
 
 #[wasm_bindgen(typescript_custom_section)]
 const SCRIPT: &'static str = r#"
@@ -38,28 +39,34 @@ pub struct SceneRef {
     del_objects: Vec<usize>,
 }
 #[wasm_bindgen]
-impl SceneRef{
+impl GloamWasm {
     pub fn add_child(&mut self, parent_id: usize, child: GameObject) {
-        self.add_objects.push((parent_id, child));
+        self.state.borrow_mut().add_objects.push((parent_id, child));
+    }
+
+    pub fn add_object(&mut self, object: GameObject) {
+        self.state.borrow_mut().add_objects.push((0, object));
     }
 
     pub fn remove_object(&mut self, object_id: usize) {
-        self.del_objects.push(object_id);
-    }
-
-    fn new(scene: Rc<RefCell<Scene>>) -> Self {
-        Self { add_objects: vec![], del_objects: vec![], scene }
+        self.state.borrow_mut().del_objects.push(object_id);
     }
 }
 
 #[wasm_bindgen]
-impl Gloam {
-    pub fn register_scene() -> SceneRef {
-        let scene = Rc::new(RefCell::new(Scene::new()));
-        unsafe { CURRENT_SCENE = Some(scene.clone()) };
+pub struct GloamWasm {
+    state: Rc<RefCell<GameState>>,
+}
 
-        return SceneRef::new(scene);
+#[wasm_bindgen]
+impl Gloam {
+    pub fn start() -> GloamWasm {
+        let game_state = Rc::new(RefCell::new(GameState::default()));
+        unsafe { CURRENT_SCENE = Some(Scene::new(game_state.clone())); }
+
+        return GloamWasm { state: game_state };
     }
+
     pub async fn load_texture(img_url: &str) -> usize {
         let request = Request::new_with_str(img_url).unwrap();
 
