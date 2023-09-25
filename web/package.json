@@ -14,7 +14,6 @@
     "vite": "^4.3.4"
   },
   "dependencies": {
-    "@rwh/keystrokes": "^1.1.3",
     "@types/keyboardjs": "^2.5.1",
     "keyboardjs": "^2.7.0"
   }

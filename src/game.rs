@@ -9,7 +9,7 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, Response};
 use web_sys::console::log_1;
 
-use crate::{CURRENT_SCENE, GameState};
+use crate::{CURRENT_SCENE, GAME_OPTIONS, GameState, STARTED};
 use crate::events::EventSub;
 use crate::scene::{GameObject, Scene, Transform};
 
@@ -23,6 +23,22 @@ pub static EVENTS: RefCell<HashMap<String, Vec<EventSub>>> = RefCell::new(HashMa
 }
 
 pub static mut TEXTURES: Vec<Texture2D> = vec![];
+
+#[wasm_bindgen]
+pub struct GameOptions {
+    pub width: u32,
+    pub height: u32,
+    pub scale: u32,
+    pub background_colour: u32,
+}
+
+#[wasm_bindgen]
+impl GameOptions {
+    #[wasm_bindgen(constructor)]
+    pub fn new(width: u32, height: u32, background_colour: u32) -> Self {
+        Self { width, height, scale: 1, background_colour }
+    }
+}
 
 #[wasm_bindgen]
 pub struct Gloam {}
@@ -61,10 +77,13 @@ pub struct GloamWasm {
 
 #[wasm_bindgen]
 impl Gloam {
-    pub fn start() -> GloamWasm {
+    pub fn start(game_options: GameOptions) -> GloamWasm {
+        log(&"this is the when start() is called".to_string());
+
         let game_state = Rc::new(RefCell::new(GameState::default()));
         unsafe { CURRENT_SCENE = Some(Scene::new(game_state.clone())); }
-
+        unsafe { GAME_OPTIONS = game_options; }
+        unsafe { STARTED = true; }
         return GloamWasm { state: game_state };
     }
 
@@ -78,6 +97,9 @@ impl Gloam {
         let data_array: Vec<u8> = Uint8Array::new(&image_data).to_vec();
 
         let tex = Texture2D::from_file_with_format(data_array.as_slice(), Some(ImageFormat::Png));
+
+        // We want perfect pixel scaling
+        tex.set_filter(FilterMode::Nearest);
 
         unsafe { TEXTURES.push(tex); }
         unsafe { return TEXTURES.len() - 1; }

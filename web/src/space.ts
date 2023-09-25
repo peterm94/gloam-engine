@@ -2,14 +2,16 @@ import {GameObject, GloamScene, GloamWrapper} from "./GameObject.ts";
 import alien from "./art/aliens.png?url";
 import player from "./art/player.png?url";
 import {Textures} from "./Texture";
-import {Gloam} from "gloam-engine";
+import {GameOptions, Gloam} from "gloam-engine";
 import * as keyboardjs from "keyboardjs";
+import {MathUtil} from "./gloam/Util.ts";
+
 
 export async function start() {
     await Textures.load_texture("alien", alien)
     await Textures.load_texture("player", player)
 
-    const ref = Gloam.start();
+    const ref = Gloam.start(new GameOptions(256, 256, 0x05092f));
     GloamWrapper.scene = new GloamScene(ref);
 
     ref.add_object(new SpaceInvaders());
@@ -35,7 +37,8 @@ export class SpaceInvaders extends GameObject {
 
         let avg = this.last_frames.reduce((a, b) => a + b) / this.last_frames.length;
         this.col += 100;
-        Gloam.draw_text(`${Math.trunc(1000 / avg / 1000)}fps`, 100, 100, 100, this.col++);
+        Gloam.draw_rectangle_filled(0, 0, 55, 20, 0xc2c7cf)
+        Gloam.draw_text(`\n${Math.trunc(1000 / avg / 1000)}fps`, 0, 0, 20, this.col++, true);
     }
 }
 
@@ -101,6 +104,8 @@ class Player extends GameObject {
         if (this.move_right === true) {
             this.x += delta * 100;
         }
+
+        this.x = MathUtil.clamp(this.x, 10, 256 - 10 - 16);
 
         // Update shoot timer
         this.shoot_cdr -= delta;

@@ -4,7 +4,7 @@ import {start} from "./space.ts";
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
-    <canvas id="glcanvas" width="256" height="256" tabindex='1' hidden></canvas>
+    <canvas id="glcanvas" width="512" height="512" tabindex='1' hidden></canvas>
   </div>
 `
 

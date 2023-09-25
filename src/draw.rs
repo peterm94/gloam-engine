@@ -21,45 +21,45 @@ impl Gloam {
     }
 
     pub fn draw_circle_filled(x: f32, y: f32, r: f32, color: u32) {
-        draw_circle(x, y, r, Gloam::to_color(color));
+        draw_circle(x, y, r, to_color(color));
     }
 
     pub fn draw_hexagon(x: f32, y: f32, size: f32, border: f32, vertical: bool, border_color: u32, fill_color: u32) {
-        draw_hexagon(x, y, size, border, vertical, Gloam::to_color(border_color), Gloam::to_color(fill_color));
+        draw_hexagon(x, y, size, border, vertical, to_color(border_color), to_color(fill_color));
     }
 
     pub fn draw_circle(x: f32, y: f32, r: f32, thickness: f32, color: u32) {
-        draw_circle_lines(x, y, r, thickness, Gloam::to_color(color));
+        draw_circle_lines(x, y, r, thickness, to_color(color));
     }
 
     pub fn draw_line(x1: f32, y1: f32, x2: f32, y2: f32, thickness: f32, color: u32) {
-        draw_line(x1, y1, x2, y2, thickness, Gloam::to_color(color));
+        draw_line(x1, y1, x2, y2, thickness, to_color(color));
     }
 
     pub fn draw_rectangle(x: f32, y: f32, w: f32, h: f32, thickness: f32, color: u32) {
-        draw_rectangle_lines(x, y, w, h, thickness, Gloam::to_color(color));
+        draw_rectangle_lines(x, y, w, h, thickness, to_color(color));
     }
 
     pub fn draw_rectangle_filled(x: f32, y: f32, w: f32, h: f32, color: u32) {
-        draw_rectangle(x, y, w, h, Gloam::to_color(color));
+        draw_rectangle(x, y, w, h, to_color(color));
     }
 
     pub fn draw_triangle_filled(x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32, color: u32) {
-        draw_triangle(Vec2::new(x1, y1), Vec2::new(x2, y2), Vec2::new(x3, y3), Gloam::to_color(color));
+        draw_triangle(Vec2::new(x1, y1), Vec2::new(x2, y2), Vec2::new(x3, y3), to_color(color));
     }
 
     pub fn draw_triangle(x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32, thickness: f32, color: u32) {
-        draw_triangle_lines(Vec2::new(x1, y1), Vec2::new(x2, y2), Vec2::new(x3, y3), thickness, Gloam::to_color(color));
+        draw_triangle_lines(Vec2::new(x1, y1), Vec2::new(x2, y2), Vec2::new(x3, y3), thickness, to_color(color));
     }
 
     // TODO ttf font resource loading
     // TODO draw_text_ex
     pub fn draw_text(text: &str, x: f32, y: f32, size: f32, color: u32, multi_line: Option<bool>) {
         if let Some(false) = multi_line {
-            draw_text(text, x, y, size, Gloam::to_color(color));
+            draw_text(text, x, y, size, to_color(color));
             return;
         }
-        let color = Gloam::to_color(color);
+        let color = to_color(color);
         let line_height = measure_text("Ay", None, size as _, 1.).height;
         text.split('\n').enumerate().for_each(|(i, line)| {
             draw_text(line, x, y + (line_height * i as f32), size, color);
@@ -85,14 +85,14 @@ impl Gloam {
 
         TextDims { width, height: height * lines, offset_y }
     }
+}
 
-    fn to_color(value: u32) -> Color {
-        let red = (value >> 16) & 0xFF;
-        let green = (value >> 8) & 0xFF;
-        let blue = value & 0xFF;
+pub fn to_color(value: u32) -> Color {
+    let red = (value >> 16) & 0xFF;
+    let green = (value >> 8) & 0xFF;
+    let blue = value & 0xFF;
 
-        color_u8!(red, green, blue, 255)
-    }
+    color_u8!(red, green, blue, 255)
 }
 
 #[wasm_bindgen]
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_color_parse() {
-        assert_eq!(Gloam::to_color(0xFFFFFF), WHITE);
-        assert_eq!(Gloam::to_color(0xFF00FF), MAGENTA);
+        assert_eq!(to_color(0xFFFFFF), WHITE);
+        assert_eq!(to_color(0xFF00FF), MAGENTA);
     }
 }

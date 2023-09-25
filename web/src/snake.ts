@@ -1,4 +1,4 @@
-import {Gloam} from "gloam-engine";
+import {GameOptions, Gloam} from "gloam-engine";
 import redSpr from "./art/red.png?url";
 import appleSpr from "./art/apple.png?url";
 import {GameObject, GloamScene, GloamWrapper} from "./GameObject.ts";
@@ -10,7 +10,7 @@ export async function start() {
     await Textures.load_texture('apple', appleSpr);
     await Textures.load_texture('red', redSpr);
 
-    const ref = Gloam.start();
+    const ref = Gloam.start(new GameOptions(512, 512, 2, 0xFFFFFF));
     GloamWrapper.scene = new GloamScene(ref);
 
     ref.add_object(new Snake());
