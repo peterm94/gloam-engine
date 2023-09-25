@@ -2,7 +2,7 @@ import {GameOptions, Gloam} from "gloam-engine";
 import redSpr from "./art/red.png?url";
 import appleSpr from "./art/apple.png?url";
 import {GameObject, GloamScene, GloamWrapper} from "./GameObject.ts";
-import {Textures} from "./Texture.ts";
+import {Textures} from "./gloam/Texture.ts";
 import * as keyboardjs from "keyboardjs";
 
 

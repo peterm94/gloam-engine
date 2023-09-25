@@ -1,7 +1,7 @@
 import {GameObject, GloamScene, GloamWrapper} from "./GameObject.ts";
 import alien from "./art/aliens.png?url";
 import player from "./art/player.png?url";
-import {Textures} from "./Texture";
+import {Textures} from "./gloam/Texture.ts";
 import {GameOptions, Gloam} from "gloam-engine";
 import * as keyboardjs from "keyboardjs";
 import {MathUtil} from "./gloam/Util.ts";

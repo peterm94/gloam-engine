@@ -12,11 +12,12 @@ impl Gloam {
         }
     }
 
-    // TODO implement sprite sheets and use this
-    pub fn draw_texture_ex(tex_id: usize, x: f32, y: f32) {
+    pub fn draw_texture_part(tex_id: usize, x: f32, y: f32, rx: f32, ry: f32, rw: f32, rh: f32) {
         let tex = unsafe { TEXTURES.get(tex_id) };
+
         if let Some(tex) = tex {
-            draw_texture_ex(tex, x, y, WHITE, DrawTextureParams::default());
+            draw_texture_ex(tex, x, y, WHITE, DrawTextureParams {
+                source: Some(Rect { x: rx, y: ry, w: rw, h: rh }), ..Default::default() });
         }
     }
 
@@ -111,8 +112,6 @@ impl Into<TextDims> for TextDimensions {
 #[cfg(test)]
 mod tests {
     use macroquad::prelude::*;
-
-    use crate::game::Gloam;
 
     #[test]
     fn test_color_parse() {

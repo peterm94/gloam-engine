@@ -14,6 +14,7 @@ mod game;
 mod draw;
 mod events;
 mod scene;
+mod sprite;
 
 static mut CURRENT_SCENE: Option<Scene> = None;
 static mut GAME_OPTIONS: GameOptions = GameOptions { width: 512, height: 512, scale: 1, background_colour: 0 };
@@ -36,7 +37,7 @@ pub fn main2() {
 async fn main() {
     // Wait until the game is started.
     unsafe {
-        while (!STARTED) {
+        while !STARTED {
             next_frame().await
         }
     }
