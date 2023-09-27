@@ -104,4 +104,19 @@ impl Gloam {
         unsafe { TEXTURES.push(tex); }
         unsafe { return TEXTURES.len() - 1; }
     }
+
+    pub fn texture_info(tex_id: usize) -> TextureInfo {
+        let tex = unsafe { TEXTURES.get(tex_id) };
+        if let Some(tex) = tex {
+            return TextureInfo { width: tex.width(), height: tex.height() };
+        }
+        // TODO can I error or something?
+        return TextureInfo { width: 0.0, height: 0.0 };
+    }
+}
+
+#[wasm_bindgen]
+pub struct TextureInfo {
+    pub width: f32,
+    pub height: f32,
 }

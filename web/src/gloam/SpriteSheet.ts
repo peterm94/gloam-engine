@@ -1,16 +1,36 @@
+import {Gloam} from "../../../dist";
+
+export class Sprite
+{
+    constructor(readonly tex_id: number, readonly x: number, readonly y: number, readonly w: number, readonly h: number)
+    {
+    }
+
+    draw(x: number, y: number) {
+        Gloam.draw_texture_part(this.tex_id, x, y, this.x, this.y, this.w, this.h);
+    }
+}
+
 /**
  * Convenient way to load multiple sprites from a single Sprite Sheet.
  */
 export class SpriteSheet
 {
+    private readonly texture_width: number
+    private readonly texture_height: number
+
     /**
      * Create a new SpriteSheet.
+     * @param tex_id Texture ID.
      * @param resource The base sprite sheet resource.
      * @param tileWidth The width of the tiles on the sheet.
      * @param tileHeight The height of the tiles on the sheet.
      */
-    constructor(readonly tex_id: string, private readonly tileWidth: number, private readonly tileHeight: number)
+    constructor(private readonly tex_id: number, private readonly tileWidth: number, private readonly tileHeight: number)
     {
+        const tex_info = Gloam.texture_info(tex_id);
+        this.texture_width = tex_info.width;
+        this.texture_height = tex_info.height;
         this.tileWidth = tileWidth;
         this.tileHeight = tileHeight;
     }
@@ -22,14 +42,12 @@ export class SpriteSheet
      * @param width Optional override for the texture width.
      * @param height Optional override for the texture height.
      */
-    texture(column: number, row: number, width?: number, height?: number): PIXI.Texture
+    texture(column: number, row: number, width?: number, height?: number): Sprite
     {
         const w = width || this.tileWidth;
         const h = height || this.tileHeight;
 
-        return new PIXI.Texture(this.sheetTexture, new PIXI.Rectangle(column * this.tileWidth,
-            row * this.tileHeight,
-            w, h));
+        return new Sprite(this.tex_id, column * this.tileWidth, row * this.tileHeight, w, h);
     }
 
     /**
@@ -39,9 +57,9 @@ export class SpriteSheet
      * @param width Width in pixels.
      * @param height Height in pixels.
      */
-    textureFromPoints(x: number, y: number, width: number, height: number): PIXI.Texture
+    textureFromPoints(x: number, y: number, width: number, height: number): Sprite
     {
-        return new PIXI.Texture(this.sheetTexture, new PIXI.Rectangle(x, y, width, height));
+        return new Sprite(this.tex_id, x, y, width, height);
     }
 
     /**
@@ -49,14 +67,15 @@ export class SpriteSheet
      * @param index Tile index of the texture to load.
      * @returns The loaded texture.
      */
-    textureFromIndex(index: number): PIXI.Texture
+    // TODO this is busted?
+    textureFromIndex(index: number): Sprite
     {
-        const col = index % (this.sheetTexture.realWidth / this.tileWidth);
-        const row = Math.floor(index / (this.sheetTexture.realHeight / this.tileHeight));
+        const col = index % (this.texture_width / this.tileWidth);
+        const row = Math.floor(index / (this.texture_height / this.tileHeight));
 
-        return new PIXI.Texture(this.sheetTexture, new PIXI.Rectangle(col * this.tileWidth,
+        return new Sprite(this.tex_id, col * this.tileWidth,
             row * this.tileHeight,
-            this.tileWidth, this.tileHeight));
+            this.tileWidth, this.tileHeight);
     }
 
     /**
@@ -66,7 +85,7 @@ export class SpriteSheet
      * @param height Optional override for the texture height.
      * @returns The loaded textures.
      */
-    textures(frames: [number, number][], width?: number, height?: number): PIXI.Texture[]
+    textures(frames: [number, number][], width?: number, height?: number): Sprite[]
     {
         const textures = [];
         for (const frame of frames)
@@ -85,7 +104,7 @@ export class SpriteSheet
      * @param height Optional override for the texture height.
      * @returns The loaded texture.
      */
-    textureSliceFromRow(row: number, start: number, end: number, width?: number, height?: number): PIXI.Texture[]
+    textureSliceFromRow(row: number, start: number, end: number, width?: number, height?: number): Sprite[]
     {
         const textures = [];
 
@@ -101,9 +120,9 @@ export class SpriteSheet
      * Slices all sprites out of the first row of the SpriteSheet.
      * @returns PIXI.Texture[] The loaded textures.
      */
-    textureSliceFromSheet(): PIXI.Texture[]
+    textureSliceFromSheet(): Sprite[]
     {
-        const end = Math.floor(this.sheetTexture.width / this.tileWidth);
+        const end = Math.floor(this.texture_width / this.tileWidth);
         return this.textureSliceFromRow(0, 0, end - 1)
     }
 }

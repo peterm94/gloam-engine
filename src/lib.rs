@@ -41,6 +41,7 @@ async fn main() {
             next_frame().await
         }
     }
+
     unsafe {
         let mut camera = Camera2D::from_display_rect(Rect::new(0., 0., GAME_OPTIONS.width as f32, GAME_OPTIONS.height as f32));
         // There is a macroquad bug that makes the camera render upside down.
