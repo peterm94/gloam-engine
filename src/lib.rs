@@ -2,9 +2,11 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use collision::dbvt::DynamicBoundingVolumeTree;
 
 use macroquad::prelude::*;
 use wasm_bindgen::prelude::*;
+use crate::collisions::Shape;
 use crate::draw::to_color;
 
 use crate::game::{GameOptions, log};
@@ -14,11 +16,13 @@ mod game;
 mod draw;
 mod events;
 mod scene;
-mod sprite;
+mod collisions;
 
 static mut CURRENT_SCENE: Option<Scene> = None;
-static mut GAME_OPTIONS: GameOptions = GameOptions { width: 512, height: 512, scale: 1, background_colour: 0 };
 
+static mut GAME_OPTIONS: GameOptions = GameOptions { width: 512, height: 512, scale: 1, background_colour: 0 };
+static mut COLLISION_GRAPH: Option<DynamicBoundingVolumeTree<Shape>> = None;
+static mut UPDATED_COLLS: Vec<bool> = vec![];
 static mut STARTED: bool = false;
 
 #[derive(Default)]

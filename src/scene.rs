@@ -1,13 +1,14 @@
 use std::cell::RefCell;
 use std::mem;
 use std::rc::Rc;
+use collision::algorithm::broad_phase::DbvtBroadPhase;
 
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use wasm_bindgen::prelude::*;
 
+use crate::{COLLISION_GRAPH, GameState, UPDATED_COLLS};
 use crate::game::log;
-use crate::GameState;
 
 #[wasm_bindgen]
 extern "C" {
@@ -104,7 +105,7 @@ impl GloamGraph {
 pub struct Scene {
     graph: GloamGraph,
     state: Rc<RefCell<GameState>>,
-
+    collisions_this_frame: Vec<(usize, usize)>,
     add_objects: Vec<(usize, GameObject, Rc<RefCell<Transform>>)>,
     del_objects: Vec<usize>,
 }
@@ -114,6 +115,7 @@ impl Scene {
         Self {
             graph: GloamGraph::new(),
             state,
+            collisions_this_frame: vec![],
             add_objects: vec![],
             del_objects: vec![],
         }
@@ -134,6 +136,19 @@ impl Scene {
             }
         });
 
+        // update collisions
+        unsafe {
+            if let Some(graph) = &mut COLLISION_GRAPH {
+                graph.tick();
+
+                // Do collision checks
+                let phaser = DbvtBroadPhase::new();
+                self.collisions_this_frame = phaser.find_collider_pairs(&graph, UPDATED_COLLS.as_slice());
+                // clear dirty flags
+                UPDATED_COLLS.fill(false);
+            }
+        }
+
         // TODO do I need to init in a separate loop?
         if !self.state.borrow().add_objects.is_empty() {
             mem::swap(&mut self.add_objects, &mut self.state.borrow_mut().add_objects);
@@ -143,11 +158,17 @@ impl Scene {
             });
         }
     }
+
+    // TODO we need to do this more gracefully with layers and shit
+    pub fn check_collision(&self, node_1: usize, node_2: usize) -> bool {
+        self.collisions_this_frame.contains(&(node_1, node_2)) || self.collisions_this_frame.contains(&(node_2, node_1))
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use petgraph::algo::toposort;
+
     use super::*;
 
     #[test]
@@ -178,7 +199,7 @@ mod tests {
         }
 
         println!("for");
-        graph.node_references().for_each(|(_, x)|println!("{}", x));
+        graph.node_references().for_each(|(_, x)| println!("{}", x));
         println!("topo");
 
         for x in toposort(&graph, None).unwrap() {

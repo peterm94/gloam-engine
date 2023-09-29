@@ -112,6 +112,7 @@ impl Into<TextDims> for TextDimensions {
 #[cfg(test)]
 mod tests {
     use macroquad::prelude::*;
+    use crate::draw::to_color;
 
     #[test]
     fn test_color_parse() {
