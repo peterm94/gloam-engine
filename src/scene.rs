@@ -4,6 +4,8 @@ use std::rc::Rc;
 
 use collision::algorithm::broad_phase::DbvtBroadPhase;
 use collision::dbvt::DynamicBoundingVolumeTree;
+use macroquad::color::GREEN;
+use macroquad::shapes::{draw_rectangle, draw_rectangle_lines};
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use wasm_bindgen::prelude::*;
@@ -106,7 +108,7 @@ impl GloamGraph {
 #[wasm_bindgen]
 pub struct Scene {
     graph: GloamGraph,
-    coll_graph: DynamicBoundingVolumeTree<Shape>,
+    pub(crate) coll_graph: Rc<RefCell<DynamicBoundingVolumeTree<Shape>>>,
     updated_colls: Vec<bool>,
     state: Rc<RefCell<GameState>>,
     add_objects: Vec<(usize, GameObject, Rc<RefCell<Transform>>)>,
@@ -119,7 +121,7 @@ impl Scene {
     pub fn new(state: Rc<RefCell<GameState>>) -> Self {
         Self {
             graph: GloamGraph::new(),
-            coll_graph: DynamicBoundingVolumeTree::new(),
+            coll_graph: Rc::new(RefCell::new(DynamicBoundingVolumeTree::new())),
             updated_colls: vec![],
             state,
             add_objects: vec![],
@@ -144,41 +146,49 @@ impl Scene {
             }
         });
 
-        // update collisions
-        self.coll_graph.tick();
-
-        // // Do collision checks
         {
-            let phaser = DbvtBroadPhase::new();
-            let mut state = self.state.borrow_mut();
-            state.collisions_this_frame = phaser.find_collider_pairs(&self.coll_graph, self.updated_colls.as_slice());
-            log(&format!("{:?}",state.collisions_this_frame));
-        }
+            let mut coll_graph = self.coll_graph.borrow_mut();
+            // update collisions
+            coll_graph.tick();
+            coll_graph.values().iter().for_each(|(_, shp)| {
+                let min = shp.aabb.min;
+                let max = shp.aabb.max;
+                draw_rectangle_lines(min.x, min.y, max.x - min.x, max.y - min.y, 1., GREEN);
+            });
 
-        // clear dirty flags
-        self.updated_colls.fill(false);
+            // // Do collision checks
+            {
+                let phaser = DbvtBroadPhase::new();
+                let mut state = self.state.borrow_mut();
+                let mut found = phaser.find_collider_pairs(&coll_graph, self.updated_colls.as_slice());
+                mem::swap(&mut state.collisions_this_frame,&mut found);
+            }
 
-        // Add colliders
-        if !self.state.borrow().add_colliders.is_empty() {
-            mem::swap(&mut self.add_colliders, &mut self.state.borrow_mut().add_colliders);
-            self.add_colliders.drain(..).for_each(|(shape, shape_id)| {
-                let node_id = self.coll_graph.insert(shape);
-                if self.updated_colls.len() < (node_id + 1) {
-                    self.updated_colls.resize(node_id + 1, false);
+            // clear dirty flags
+            self.updated_colls.fill(true);
+
+            // Add colliders
+            if !self.state.borrow().add_colliders.is_empty() {
+                mem::swap(&mut self.add_colliders, &mut self.state.borrow_mut().add_colliders);
+                self.add_colliders.drain(..).for_each(|(shape, shape_id)| {
+                    let node_id = coll_graph.insert(shape);
+                    if self.updated_colls.len() < (node_id + 1) {
+                        self.updated_colls.resize(node_id + 1, false);
+                        self.updated_colls[node_id] = true;
+                    }
+                    *shape_id.borrow_mut() = node_id;
+                });
+            }
+
+            // Move colliders
+            if !self.state.borrow().move_colliders.is_empty() {
+                mem::swap(&mut self.move_colliders, &mut self.state.borrow_mut().move_colliders);
+                self.move_colliders.drain(..).for_each(|(node_id, shape)| {
+                    coll_graph.update_node(node_id, shape);
+                    //     // Mark node as dirty in our other tracker.
                     self.updated_colls[node_id] = true;
-                }
-                *shape_id.borrow_mut() = node_id;
-            });
-        }
-
-        // Move colliders
-        if !self.state.borrow().move_colliders.is_empty() {
-            mem::swap(&mut self.move_colliders, &mut self.state.borrow_mut().move_colliders);
-            self.move_colliders.drain(..).for_each(|(node_id, shape)| {
-                self.coll_graph.update_node(node_id, shape);
-                //     // Mark node as dirty in our other tracker.
-                self.updated_colls[node_id] = true;
-            });
+                });
+            }
         }
 
         // TODO do I need to init in a separate loop?

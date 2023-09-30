@@ -42,13 +42,13 @@ impl Collider {
 
 #[derive(Debug, Clone)]
 pub struct Shape {
-    aabb: Aabb2<f32>,
+    pub aabb: Aabb2<f32>,
     fat_aabb: Aabb2<f32>,
 }
 
 impl Shape {
     pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
-        let aabb = aabb2(x, y, x + w, x + h);
+        let aabb = aabb2(x, y, x + w, y + h);
         Self { aabb, fat_aabb: aabb.add_margin(Vector2::new(0., 0.)) }
     }
 }
@@ -65,7 +65,7 @@ impl TreeValue for Shape {
     }
 }
 
-fn aabb2(minx: f32, miny: f32, maxx: f32, maxy: f32) -> Aabb2<f32> {
+pub fn aabb2(minx: f32, miny: f32, maxx: f32, maxy: f32) -> Aabb2<f32> {
     Aabb2::new(Point2::new(minx, miny), Point2::new(maxx, maxy))
 }
 
@@ -85,8 +85,6 @@ mod tests {
         tree.insert(Shape::new(11., 0., 14., 10.));
 
         tree.tick();
-
-        // use tree.flag_updated() if something moves
 
         let mut phaser = DbvtBroadPhase::new();
         // only one of the dirty flags needs to be set for it to count for collisions

@@ -173,7 +173,10 @@ class Bullet extends GameObject
         this.y -= delta * 200;
         this.scene.move_collider(this.collider, this.x, this.y, 2, 7);
 
-        console.log(this.scene.collisions_for(this.collider));
+        let colls = this.scene.collisions_for(this.collider);
+        if (colls.length != 0) {
+            console.log(colls);
+        }
 
     }
 

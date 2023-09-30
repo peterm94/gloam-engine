@@ -19,6 +19,7 @@ mod scene;
 mod collisions;
 
 static mut CURRENT_SCENE: Option<Scene> = None;
+static mut COLL_GRAPH: Option<Rc<RefCell<DynamicBoundingVolumeTree<Shape>>>> = None;
 
 static mut GAME_OPTIONS: GameOptions = GameOptions { width: 512, height: 512, scale: 1, background_colour: 0 };
 static mut STARTED: bool = false;

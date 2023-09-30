@@ -1,6 +1,9 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use collision::Aabb2;
+use collision::algorithm::broad_phase::DbvtBroadPhase;
+use collision::dbvt::ContinuousVisitor;
 
 use js_sys::{ArrayBuffer, Uint8Array};
 use macroquad::prelude::*;
@@ -9,8 +12,8 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, Response};
 use web_sys::console::log_1;
 
-use crate::{CURRENT_SCENE, GAME_OPTIONS, GameState, STARTED};
-use crate::collisions::Shape;
+use crate::{COLL_GRAPH, CURRENT_SCENE, GAME_OPTIONS, GameState, STARTED};
+use crate::collisions::{aabb2, Shape};
 use crate::events::EventSub;
 use crate::scene::{GameObject, Scene, Transform};
 
@@ -116,7 +119,10 @@ impl Gloam {
         log(&"this is the when start() is called".to_string());
 
         let game_state = Rc::new(RefCell::new(GameState::default()));
-        unsafe { CURRENT_SCENE = Some(Scene::new(game_state.clone())); }
+        let scene = Scene::new(game_state.clone());
+        let coll_graph = scene.coll_graph.clone();
+        unsafe { CURRENT_SCENE = Some(scene); }
+        unsafe { COLL_GRAPH = Some(coll_graph); }
         unsafe { GAME_OPTIONS = game_options; }
         unsafe { STARTED = true; }
         return GloamWasm { state: game_state };
