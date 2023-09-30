@@ -2,14 +2,15 @@ import {GameObject, GloamScene, GloamWrapper} from "./gloam/GameObject.ts";
 import alien from "./art/aliens.png?url";
 import player from "./art/player.png?url";
 import {Textures} from "./gloam/Texture.ts";
-import {Collider, ColliderWasm, GameOptions, Gloam} from "gloam-engine";
+import {ColliderWasm, GameOptions, Gloam} from "gloam-engine";
 import * as keyboardjs from "keyboardjs";
 import {MathUtil} from "./gloam/Util.ts";
 import {SpriteSheet} from "./gloam/SpriteSheet";
 import {AnimatedSpriteController} from "./gloam/AnimatedSpriteController.ts";
 
 
-export async function start() {
+export async function start()
+{
     await Textures.load_texture("alien", alien)
     await Textures.load_texture("player", player)
 
@@ -20,19 +21,22 @@ export async function start() {
 }
 
 
-export class SpaceInvaders extends GameObject {
+export class SpaceInvaders extends GameObject
+{
     player: Player
     controller: AlienControl
 
     last_frames = Array(1000).fill(0.001);
     col = 0;
 
-    init(): void {
+    init(): void
+    {
         this.controller = this.scene.add_object(new AlienControl());
         this.player = this.scene.add_object(new Player());
     }
 
-    update(delta: number): void {
+    update(delta: number): void
+    {
 
         this.last_frames.push(delta);
         this.last_frames.shift();
@@ -44,10 +48,15 @@ export class SpaceInvaders extends GameObject {
     }
 }
 
-class Alien extends GameObject {
+class Alien extends GameObject
+{
     private readonly animation: AnimatedSpriteController
+    private x: number;
+    private y: number;
+    private collider: ColliderWasm;
 
-    constructor(parent: GameObject) {
+    constructor(parent: GameObject)
+    {
         super(parent);
 
         const alien_sprites = new SpriteSheet(Textures.get_tex("alien"), 16, 16);
@@ -59,20 +68,24 @@ class Alien extends GameObject {
                 animation_speed: 0.5
             }
         }]));
+
+        this.x = Math.floor(this.id() / 10) * 16;
+        this.y = this.id() % 10 * 16;
     }
 
-    init(): void {
+    init(): void
+    {
+        this.collider = this.scene.add_collider(this.x, this.y, 16, 16);
     }
 
-    update(delta: number): void {
-        const x = Math.floor(this.id() / 10);
-        const y = this.id() % 10;
-
-        this.animation.draw(x * 16, y * 16);
+    update(delta: number): void
+    {
+        this.animation.draw(this.x, this.y);
     }
 }
 
-class Player extends GameObject {
+class Player extends GameObject
+{
     private player_tex: number;
 
     x = 128;
@@ -81,12 +94,14 @@ class Player extends GameObject {
     shoot = false;
     shoot_cdr = 0;
 
-    constructor() {
+    constructor()
+    {
         super();
         this.player_tex = Textures.get_tex("player");
     }
 
-    init(): void {
+    init(): void
+    {
 
         keyboardjs.bind('a', event => {
                 this.move_left = true;
@@ -106,14 +121,17 @@ class Player extends GameObject {
         })
     }
 
-    update(delta: number): void {
+    update(delta: number): void
+    {
 
         // Move
-        if (this.move_left === true) {
+        if (this.move_left === true)
+        {
             this.x -= delta * 100;
         }
 
-        if (this.move_right === true) {
+        if (this.move_right === true)
+        {
             this.x += delta * 100;
         }
 
@@ -123,7 +141,8 @@ class Player extends GameObject {
         this.shoot_cdr -= delta;
 
         // Shoot
-        if (this.shoot && this.shoot_cdr < 0) {
+        if (this.shoot && this.shoot_cdr < 0)
+        {
             this.shoot = false
             this.scene.add_object(new Bullet(this.x + 7, 230));
         }
@@ -134,41 +153,49 @@ class Player extends GameObject {
     }
 }
 
-class Bullet extends GameObject {
+class Bullet extends GameObject
+{
     private collider: ColliderWasm = null;
 
-    constructor(public x: number, public y: number) {
+    constructor(public x: number, public y: number)
+    {
         super();
     }
 
-    init(): void {
+    init(): void
+    {
         this.collider = this.scene.add_collider(this.x, this.y, 2, 7);
     }
 
-    update(delta: number): void {
+    update(delta: number): void
+    {
         Gloam.draw_rectangle_filled(this.x, this.y, 2, 7, 0xFFFFFF);
         this.y -= delta * 200;
-        // this.collider.translate(this.x, this.y);
+        this.scene.move_collider(this.collider, this.x, this.y, 2, 7);
 
-        // we need groups?
-        // if (this.scene.check_collisions)
+        console.log(this.scene.collisions_for(this.collider));
+
     }
 
 }
 
-class AlienControl extends GameObject {
+class AlienControl extends GameObject
+{
 
     aliens: Alien[] = [];
 
-    init(): void {
+    init(): void
+    {
         console.log("adding 100 entities")
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 100; i++)
+        {
             const alien = this.scene.add_object(new Alien(this));
             this.aliens.push(alien)
         }
     }
 
-    update(delta: number): void {
+    update(delta: number): void
+    {
         // console.log(delta * 1000    );
     }
 }

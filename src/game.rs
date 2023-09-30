@@ -72,6 +72,20 @@ impl GloamWasm {
 
         return ColliderWasm { collider };
     }
+
+    pub fn move_collider(&mut self, id: usize, x: f32, y: f32, w: f32, h: f32) {
+        self.state.borrow_mut().move_colliders.push((id, Shape::new(x, y, w, h)));
+    }
+
+    pub fn collisions_for(&self, node_id: usize) -> Vec<usize> {
+        let state = &self.state.borrow();
+        let f1 = state.collisions_this_frame.iter().filter(|x| x.0 == node_id).map(|x| x.1);
+        let f2 = state.collisions_this_frame.iter().filter(|x| x.1 == node_id).map(|x| x.0);
+        return f1.chain(f2).collect();
+    }
+    pub fn check_collision(&self, node_1: usize, node_2: usize) -> bool {
+        self.state.borrow().collisions_this_frame.contains(&(node_1, node_2)) || self.state.borrow().collisions_this_frame.contains(&(node_2, node_1))
+    }
 }
 
 #[wasm_bindgen]
@@ -82,6 +96,13 @@ pub struct TransformWasm {
 #[wasm_bindgen]
 pub struct ColliderWasm {
     collider: Rc<RefCell<usize>>,
+}
+
+#[wasm_bindgen]
+impl ColliderWasm {
+    pub fn id(&self) -> usize {
+        return self.collider.borrow().clone();
+    }
 }
 
 #[wasm_bindgen]

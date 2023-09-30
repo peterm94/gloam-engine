@@ -28,7 +28,8 @@ pub struct GameState {
     add_objects: Vec<(usize, GameObject, Rc<RefCell<Transform>>)>,
     add_colliders: Vec<(Shape, Rc<RefCell<usize>>)>,
     del_objects: Vec<usize>,
-
+    move_colliders: Vec<(usize, Shape)>,
+    collisions_this_frame: Vec<(usize, usize)>
 }
 
 #[wasm_bindgen]

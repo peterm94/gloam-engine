@@ -1,4 +1,4 @@
-import {Collider, ColliderWasm, GloamWasm, TransformWasm} from "gloam-engine"
+import {ColliderWasm, GloamWasm, TransformWasm} from "gloam-engine"
 
 interface Scene
 {
@@ -6,7 +6,11 @@ interface Scene
 
     remove_object(object_id: number): void;
 
-    add_collider(x: number, y: number, w: number, h: number) : ColliderWasm;
+    add_collider(x: number, y: number, w: number, h: number): ColliderWasm;
+
+    move_collider(collider: ColliderWasm, x: number, y: number, w: number, h: number): void
+
+    collisions_for(collider: ColliderWasm): number[];
 }
 
 export class DumbScene implements Scene
@@ -21,10 +25,19 @@ export class DumbScene implements Scene
         throw new Error("You need to add the object to the scene before you can use it.")
     }
 
-    add_collider(x: number, y: number, w: number, h: number) : ColliderWasm
+    add_collider(x: number, y: number, w: number, h: number): ColliderWasm
     {
         throw new Error("You need to add the object to the scene before you can use it.")
+    }
 
+    move_collider(collider: ColliderWasm, x: number, y: number, w: number, h: number): void
+    {
+        throw new Error("You need to add the object to the scene before you can use it.")
+    }
+
+    collisions_for(collider: ColliderWasm): number[]
+    {
+        throw new Error("You need to add the object to the scene before you can use it.")
     }
 }
 
@@ -57,6 +70,16 @@ export class GloamScene implements Scene
     add_collider(x: number, y: number, w: number, h: number): ColliderWasm
     {
         return this.ref.add_collider(x, y, w, h);
+    }
+
+    move_collider(collider: ColliderWasm, x: number, y: number, w: number, h: number): void
+    {
+        this.ref.move_collider(collider.id(), x, y, w, h);
+    }
+
+    collisions_for(collider: ColliderWasm): number[]
+    {
+        return Array.from(this.ref.collisions_for(collider.id()));
     }
 }
 

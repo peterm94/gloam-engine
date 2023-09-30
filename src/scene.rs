@@ -1,16 +1,16 @@
 use std::cell::RefCell;
 use std::mem;
 use std::rc::Rc;
+
 use collision::algorithm::broad_phase::DbvtBroadPhase;
 use collision::dbvt::DynamicBoundingVolumeTree;
-
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use wasm_bindgen::prelude::*;
 
-use crate::{GameState};
 use crate::collisions::Shape;
 use crate::game::log;
+use crate::GameState;
 
 #[wasm_bindgen]
 extern "C" {
@@ -109,9 +109,9 @@ pub struct Scene {
     coll_graph: DynamicBoundingVolumeTree<Shape>,
     updated_colls: Vec<bool>,
     state: Rc<RefCell<GameState>>,
-    collisions_this_frame: Vec<(usize, usize)>,
     add_objects: Vec<(usize, GameObject, Rc<RefCell<Transform>>)>,
     add_colliders: Vec<(Shape, Rc<RefCell<usize>>)>,
+    move_colliders: Vec<(usize, Shape)>,
     del_objects: Vec<usize>,
 }
 
@@ -122,9 +122,9 @@ impl Scene {
             coll_graph: DynamicBoundingVolumeTree::new(),
             updated_colls: vec![],
             state,
-            collisions_this_frame: vec![],
             add_objects: vec![],
             add_colliders: vec![],
+            move_colliders: vec![],
             del_objects: vec![],
         }
     }
@@ -146,19 +146,38 @@ impl Scene {
 
         // update collisions
         self.coll_graph.tick();
+
         // // Do collision checks
-        // let phaser = DbvtBroadPhase::new();
-        // self.collisions_this_frame = phaser.find_collider_pairs(&self.coll_graph, UPDATED_COLLS.as_slice());
-        // // clear dirty flags
-        // UPDATED_COLLS.fill(false);
+        {
+            let phaser = DbvtBroadPhase::new();
+            let mut state = self.state.borrow_mut();
+            state.collisions_this_frame = phaser.find_collider_pairs(&self.coll_graph, self.updated_colls.as_slice());
+            log(&format!("{:?}",state.collisions_this_frame));
+        }
+
+        // clear dirty flags
+        self.updated_colls.fill(false);
 
         // Add colliders
         if !self.state.borrow().add_colliders.is_empty() {
             mem::swap(&mut self.add_colliders, &mut self.state.borrow_mut().add_colliders);
             self.add_colliders.drain(..).for_each(|(shape, shape_id)| {
                 let node_id = self.coll_graph.insert(shape);
-                log(&format!("added {node_id}"));
+                if self.updated_colls.len() < (node_id + 1) {
+                    self.updated_colls.resize(node_id + 1, false);
+                    self.updated_colls[node_id] = true;
+                }
                 *shape_id.borrow_mut() = node_id;
+            });
+        }
+
+        // Move colliders
+        if !self.state.borrow().move_colliders.is_empty() {
+            mem::swap(&mut self.move_colliders, &mut self.state.borrow_mut().move_colliders);
+            self.move_colliders.drain(..).for_each(|(node_id, shape)| {
+                self.coll_graph.update_node(node_id, shape);
+                //     // Mark node as dirty in our other tracker.
+                self.updated_colls[node_id] = true;
             });
         }
 
@@ -170,11 +189,6 @@ impl Scene {
                 self.graph.add(parent, child, transform);
             });
         }
-    }
-
-    // TODO we need to do this more gracefully with layers and shit
-    pub fn check_collision(&self, node_1: usize, node_2: usize) -> bool {
-        self.collisions_this_frame.contains(&(node_1, node_2)) || self.collisions_this_frame.contains(&(node_2, node_1))
     }
 }
 
