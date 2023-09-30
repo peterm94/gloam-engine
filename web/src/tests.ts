@@ -1,5 +1,5 @@
 import {Gloam} from "gloam-engine";
-import {GameObject} from "./GameObject.ts";
+import {GameObject} from "./gloam/GameObject.ts";
 
 
 export class A extends GameObject {

@@ -3,8 +3,6 @@ use collision::{Aabb, Aabb2};
 use collision::dbvt::TreeValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use crate::{COLLISION_GRAPH, UPDATED_COLLS};
-
 #[wasm_bindgen]
 pub struct Collider {
     node_index: usize,
@@ -14,32 +12,32 @@ pub struct Collider {
 
 #[wasm_bindgen]
 impl Collider {
-    #[wasm_bindgen(constructor)]
-    pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
-        let shape = Shape::new(x, y, x + w, y + h);
-        let node_index = unsafe {
-            if let Some(graph) = &mut COLLISION_GRAPH {
-                graph.insert(shape)
-            } else {
-                panic!("bad");
-            }
-        };
-        unsafe { UPDATED_COLLS.push(true) };
-        Self { node_index, w, h }
-    }
-
-    pub fn translate(&mut self, new_x: f32, new_y: f32) {
-        let new_shape = Shape::new(new_x, new_y, self.w, self.h);
-        // TODO borrow issues here
-        unsafe {
-            if let Some(graph) = &mut COLLISION_GRAPH {
-                graph.update_node(self.node_index, new_shape);
-            }
-        }
-
-        // Mark node as dirty in our other tracker.
-        unsafe { UPDATED_COLLS[self.node_index] = true; }
-    }
+    // #[wasm_bindgen(constructor)]
+    // pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
+    //     let shape = Shape::new(x, y, x + w, y + h);
+    //     let node_index = unsafe {
+    //         if let Some(graph) = &mut COLLISION_GRAPH {
+    //             graph.insert(shape)
+    //         } else {
+    //             panic!("bad");
+    //         }
+    //     };
+    //     unsafe { UPDATED_COLLS.push(true) };
+    //     Self { node_index, w, h }
+    // }
+    //
+    // pub fn translate(&mut self, new_x: f32, new_y: f32) {
+    //     let new_shape = Shape::new(new_x, new_y, self.w, self.h);
+    //     // TODO borrow issues here
+    //     unsafe {
+    //         if let Some(graph) = &mut COLLISION_GRAPH {
+    //             graph.update_node(self.node_index, new_shape);
+    //         }
+    //     }
+    //
+    //     // Mark node as dirty in our other tracker.
+    //     unsafe { UPDATED_COLLS[self.node_index] = true; }
+    // }
 }
 
 #[derive(Debug, Clone)]
@@ -49,7 +47,7 @@ pub struct Shape {
 }
 
 impl Shape {
-    fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
+    pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
         let aabb = aabb2(x, y, x + w, x + h);
         Self { aabb, fat_aabb: aabb.add_margin(Vector2::new(0., 0.)) }
     }

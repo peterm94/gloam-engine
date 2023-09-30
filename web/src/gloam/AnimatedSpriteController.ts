@@ -1,4 +1,4 @@
-import {GameObject} from "../GameObject.ts";
+import {GameObject} from "./GameObject.ts";
 import {Sprite} from "./SpriteSheet.ts";
 
 export interface SpriteAnimation {

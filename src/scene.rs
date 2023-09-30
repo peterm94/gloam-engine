@@ -2,12 +2,14 @@ use std::cell::RefCell;
 use std::mem;
 use std::rc::Rc;
 use collision::algorithm::broad_phase::DbvtBroadPhase;
+use collision::dbvt::DynamicBoundingVolumeTree;
 
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use wasm_bindgen::prelude::*;
 
-use crate::{COLLISION_GRAPH, GameState, UPDATED_COLLS};
+use crate::{GameState};
+use crate::collisions::Shape;
 use crate::game::log;
 
 #[wasm_bindgen]
@@ -104,9 +106,12 @@ impl GloamGraph {
 #[wasm_bindgen]
 pub struct Scene {
     graph: GloamGraph,
+    coll_graph: DynamicBoundingVolumeTree<Shape>,
+    updated_colls: Vec<bool>,
     state: Rc<RefCell<GameState>>,
     collisions_this_frame: Vec<(usize, usize)>,
     add_objects: Vec<(usize, GameObject, Rc<RefCell<Transform>>)>,
+    add_colliders: Vec<(Shape, Rc<RefCell<usize>>)>,
     del_objects: Vec<usize>,
 }
 
@@ -114,9 +119,12 @@ impl Scene {
     pub fn new(state: Rc<RefCell<GameState>>) -> Self {
         Self {
             graph: GloamGraph::new(),
+            coll_graph: DynamicBoundingVolumeTree::new(),
+            updated_colls: vec![],
             state,
             collisions_this_frame: vec![],
             add_objects: vec![],
+            add_colliders: vec![],
             del_objects: vec![],
         }
     }
@@ -137,16 +145,20 @@ impl Scene {
         });
 
         // update collisions
-        unsafe {
-            if let Some(graph) = &mut COLLISION_GRAPH {
-                graph.tick();
+        self.coll_graph.tick();
+        // // Do collision checks
+        // let phaser = DbvtBroadPhase::new();
+        // self.collisions_this_frame = phaser.find_collider_pairs(&self.coll_graph, UPDATED_COLLS.as_slice());
+        // // clear dirty flags
+        // UPDATED_COLLS.fill(false);
 
-                // Do collision checks
-                let phaser = DbvtBroadPhase::new();
-                self.collisions_this_frame = phaser.find_collider_pairs(&graph, UPDATED_COLLS.as_slice());
-                // clear dirty flags
-                UPDATED_COLLS.fill(false);
-            }
+        // Add colliders
+        if !self.state.borrow().add_colliders.is_empty() {
+            mem::swap(&mut self.add_colliders, &mut self.state.borrow_mut().add_colliders);
+            self.add_colliders.drain(..).for_each(|(shape, shape_id)| {
+                let node_id = self.coll_graph.insert(shape);
+                *shape_id.borrow_mut() = node_id;
+            });
         }
 
         // TODO do I need to init in a separate loop?

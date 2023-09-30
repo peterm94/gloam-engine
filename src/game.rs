@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use collision::dbvt::DynamicBoundingVolumeTree;
 use js_sys::{ArrayBuffer, Uint8Array};
 use macroquad::prelude::*;
 use wasm_bindgen::prelude::*;
@@ -10,7 +9,8 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, Response};
 use web_sys::console::log_1;
 
-use crate::{COLLISION_GRAPH, CURRENT_SCENE, GAME_OPTIONS, GameState, STARTED, UPDATED_COLLS};
+use crate::{CURRENT_SCENE, GAME_OPTIONS, GameState, STARTED};
+use crate::collisions::Shape;
 use crate::events::EventSub;
 use crate::scene::{GameObject, Scene, Transform};
 
@@ -64,11 +64,24 @@ impl GloamWasm {
     pub fn remove_object(&mut self, object_id: usize) {
         self.state.borrow_mut().del_objects.push(object_id);
     }
+
+    pub fn add_collider(&mut self, x: f32, y: f32, w: f32, h: f32) -> ColliderWasm {
+        let shape = Shape::new(x, y, w, h);
+        let collider = Rc::new(RefCell::new(0_usize));
+        self.state.borrow_mut().add_colliders.push((shape, collider.clone()));
+
+        return ColliderWasm { collider };
+    }
 }
 
 #[wasm_bindgen]
 pub struct TransformWasm {
     transform: Rc<RefCell<Transform>>,
+}
+
+#[wasm_bindgen]
+pub struct ColliderWasm {
+    collider: Rc<RefCell<usize>>,
 }
 
 #[wasm_bindgen]
@@ -84,8 +97,6 @@ impl Gloam {
         let game_state = Rc::new(RefCell::new(GameState::default()));
         unsafe { CURRENT_SCENE = Some(Scene::new(game_state.clone())); }
         unsafe { GAME_OPTIONS = game_options; }
-        unsafe { COLLISION_GRAPH = Some(DynamicBoundingVolumeTree::new()); }
-        unsafe { UPDATED_COLLS = vec![false; 1024]; }
         unsafe { STARTED = true; }
         return GloamWasm { state: game_state };
     }

@@ -21,13 +21,12 @@ mod collisions;
 static mut CURRENT_SCENE: Option<Scene> = None;
 
 static mut GAME_OPTIONS: GameOptions = GameOptions { width: 512, height: 512, scale: 1, background_colour: 0 };
-static mut COLLISION_GRAPH: Option<DynamicBoundingVolumeTree<Shape>> = None;
-static mut UPDATED_COLLS: Vec<bool> = vec![];
 static mut STARTED: bool = false;
 
 #[derive(Default)]
 pub struct GameState {
     add_objects: Vec<(usize, GameObject, Rc<RefCell<Transform>>)>,
+    add_colliders: Vec<(Shape, Rc<RefCell<usize>>)>,
     del_objects: Vec<usize>,
 
 }

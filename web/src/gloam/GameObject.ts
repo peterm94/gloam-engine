@@ -1,4 +1,4 @@
-import {GloamWasm, TransformWasm} from "gloam-engine"
+import {GloamWasm, TransformWasm} from "../dist"
 
 interface Scene
 {

@@ -1,4 +1,4 @@
-import {GameObject, GloamScene, GloamWrapper} from "./GameObject.ts";
+import {GameObject, GloamScene, GloamWrapper} from "./gloam/GameObject.ts";
 import alien from "./art/aliens.png?url";
 import player from "./art/player.png?url";
 import {Textures} from "./gloam/Texture.ts";
