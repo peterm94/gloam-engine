@@ -1,9 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use collision::Aabb2;
-use collision::algorithm::broad_phase::DbvtBroadPhase;
-use collision::dbvt::ContinuousVisitor;
 
 use js_sys::{ArrayBuffer, Uint8Array};
 use macroquad::prelude::*;
@@ -13,7 +10,7 @@ use web_sys::{Request, Response};
 use web_sys::console::log_1;
 
 use crate::{COLL_GRAPH, CURRENT_SCENE, GAME_OPTIONS, GameState, STARTED};
-use crate::collisions::{aabb2, Shape};
+use crate::collisions::Shape;
 use crate::events::EventSub;
 use crate::scene::{GameObject, Scene, Transform};
 

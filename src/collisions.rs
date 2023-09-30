@@ -71,7 +71,7 @@ pub fn aabb2(minx: f32, miny: f32, maxx: f32, maxy: f32) -> Aabb2<f32> {
 
 #[cfg(test)]
 mod tests {
-    use collision::algorithm::broad_phase::DbvtBroadPhase;
+    use collision::algorithm::broad_phase::{BruteForce, DbvtBroadPhase};
     use collision::dbvt::DynamicBoundingVolumeTree;
 
     use super::*;
@@ -89,6 +89,7 @@ mod tests {
         let mut phaser = DbvtBroadPhase::new();
         // only one of the dirty flags needs to be set for it to count for collisions
         let pairs = phaser.find_collider_pairs(&tree, &[true, true, true]);
+        BruteForce::default().
 
         for pair in &pairs {
             // todo get details on the collision event?

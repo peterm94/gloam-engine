@@ -1,6 +1,6 @@
 import './style.css'
 import {load_game} from "gloam-engine";
-import {start} from "./space.ts";
+import {start} from "./LD54/LD54.ts";
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
