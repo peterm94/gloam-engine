@@ -2,7 +2,7 @@ import {GameObject, GloamScene, GloamWrapper} from "./gloam/GameObject.ts";
 import alien from "./art/aliens.png?url";
 import player from "./art/player.png?url";
 import {Textures} from "./gloam/Texture.ts";
-import {Collider, GameOptions, Gloam} from "gloam-engine";
+import {Collider, ColliderWasm, GameOptions, Gloam} from "gloam-engine";
 import * as keyboardjs from "keyboardjs";
 import {MathUtil} from "./gloam/Util.ts";
 import {SpriteSheet} from "./gloam/SpriteSheet";
@@ -135,20 +135,20 @@ class Player extends GameObject {
 }
 
 class Bullet extends GameObject {
-    private collider: Collider;
+    private collider: ColliderWasm = null;
 
     constructor(public x: number, public y: number) {
         super();
     }
 
     init(): void {
-        this.collider = new Collider(this.x, this.y, 2, 7);
+        this.collider = this.scene.add_collider(this.x, this.y, 2, 7);
     }
 
     update(delta: number): void {
         Gloam.draw_rectangle_filled(this.x, this.y, 2, 7, 0xFFFFFF);
         this.y -= delta * 200;
-        this.collider.translate(this.x, this.y);
+        // this.collider.translate(this.x, this.y);
 
         // we need groups?
         // if (this.scene.check_collisions)

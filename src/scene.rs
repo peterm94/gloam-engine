@@ -157,6 +157,7 @@ impl Scene {
             mem::swap(&mut self.add_colliders, &mut self.state.borrow_mut().add_colliders);
             self.add_colliders.drain(..).for_each(|(shape, shape_id)| {
                 let node_id = self.coll_graph.insert(shape);
+                log(&format!("added {node_id}"));
                 *shape_id.borrow_mut() = node_id;
             });
         }

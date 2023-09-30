@@ -1,10 +1,12 @@
-import {GloamWasm, TransformWasm} from "../dist"
+import {Collider, ColliderWasm, GloamWasm, TransformWasm} from "gloam-engine"
 
 interface Scene
 {
     add_object<T extends GameObject>(object: T): T;
 
     remove_object(object_id: number): void;
+
+    add_collider(x: number, y: number, w: number, h: number) : ColliderWasm;
 }
 
 export class DumbScene implements Scene
@@ -17,6 +19,12 @@ export class DumbScene implements Scene
     remove_object(object_id: number): void
     {
         throw new Error("You need to add the object to the scene before you can use it.")
+    }
+
+    add_collider(x: number, y: number, w: number, h: number) : ColliderWasm
+    {
+        throw new Error("You need to add the object to the scene before you can use it.")
+
     }
 }
 
@@ -44,6 +52,11 @@ export class GloamScene implements Scene
     remove_object(object_id: number): void
     {
         this.ref.remove_object(object_id);
+    }
+
+    add_collider(x: number, y: number, w: number, h: number): ColliderWasm
+    {
+        return this.ref.add_collider(x, y, w, h);
     }
 }
 
