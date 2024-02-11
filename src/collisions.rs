@@ -1,6 +1,8 @@
 use cgmath::{Point2, Vector2};
 use collision::{Aabb, Aabb2};
 use collision::dbvt::TreeValue;
+use collision::prelude::*;
+use collision::primitive::Circle;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
@@ -40,18 +42,42 @@ impl Collider {
     // }
 }
 
+trait ShapeCollider {}
+
 #[derive(Debug, Clone)]
 pub struct Shape {
     pub aabb: Aabb2<f32>,
     fat_aabb: Aabb2<f32>,
+    circle: Circle<f32>,
 }
 
 impl Shape {
     pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
         let aabb = aabb2(x, y, x + w, y + h);
-        Self { aabb, fat_aabb: aabb.add_margin(Vector2::new(0., 0.)) }
+        Self {
+            aabb,
+            fat_aabb: aabb.add_margin(Vector2::new(0., 0.)),
+            circle: Circle::new(5.0),
+        }
     }
 }
+
+pub struct CircleCollider {
+    x: f32,
+    y: f32,
+    r: f32,
+}
+
+pub struct RectCollider {
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
+}
+
+impl ShapeCollider for CircleCollider {}
+
+impl ShapeCollider for RectCollider {}
 
 impl TreeValue for Shape {
     type Bound = Aabb2<f32>;
@@ -71,7 +97,9 @@ pub fn aabb2(minx: f32, miny: f32, maxx: f32, maxy: f32) -> Aabb2<f32> {
 
 #[cfg(test)]
 mod tests {
-    use collision::algorithm::broad_phase::{BruteForce, DbvtBroadPhase};
+    use cgmath::{Basis2, Decomposed, Rad, Rotation2};
+    use collision::algorithm::broad_phase::DbvtBroadPhase;
+    use collision::algorithm::minkowski::GJK2;
     use collision::dbvt::DynamicBoundingVolumeTree;
 
     use super::*;
@@ -89,11 +117,28 @@ mod tests {
         let mut phaser = DbvtBroadPhase::new();
         // only one of the dirty flags needs to be set for it to count for collisions
         let pairs = phaser.find_collider_pairs(&tree, &[true, true, true]);
-        BruteForce::default().
+        // BruteForce::default().
 
-        for pair in &pairs {
+        let values = tree.values();
+        println!("{pairs:?}");
+
+        let gjk = GJK2::new();
+
+        // TODO use this as the internal transform type for physics objects?
+        let transform: Decomposed<Vector2<f32>, Basis2<f32>> = Decomposed {
+            disp: Vector2::new(0.0, 0.0),
+            rot: Rotation2::from_angle(Rad(0.0)),
+            scale: 1.,
+        };
+
+        for (sh1, sh2) in pairs {
+            let (_, shape1) = &values[sh1];
+            let (_, shape2) = &values[sh2];
+
+            let result = gjk.intersect(&shape1.circle, &transform, &shape2.circle, &transform);
+            println!("{result:?}");
+
             // todo get details on the collision event?
         }
-        println!("{pairs:?}");
     }
 }
