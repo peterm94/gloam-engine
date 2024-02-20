@@ -10,7 +10,7 @@ use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use wasm_bindgen::prelude::*;
 
-use crate::collisions::Shape;
+use crate::collisions::Collider;
 use crate::game::log;
 use crate::GameState;
 
@@ -108,12 +108,12 @@ impl GloamGraph {
 #[wasm_bindgen]
 pub struct Scene {
     graph: GloamGraph,
-    pub(crate) coll_graph: Rc<RefCell<DynamicBoundingVolumeTree<Shape>>>,
+    pub(crate) coll_graph: Rc<RefCell<DynamicBoundingVolumeTree<Collider>>>,
     updated_colls: Vec<bool>,
     state: Rc<RefCell<GameState>>,
     add_objects: Vec<(usize, GameObject, Rc<RefCell<Transform>>)>,
-    add_colliders: Vec<(Shape, Rc<RefCell<usize>>)>,
-    move_colliders: Vec<(usize, Shape)>,
+    add_colliders: Vec<(Collider, Rc<RefCell<usize>>)>,
+    move_colliders: Vec<(usize, Collider)>,
     del_objects: Vec<usize>,
 }
 

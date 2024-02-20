@@ -6,7 +6,7 @@ use collision::dbvt::DynamicBoundingVolumeTree;
 
 use macroquad::prelude::*;
 use wasm_bindgen::prelude::*;
-use crate::collisions::Shape;
+use crate::collisions::Collider;
 use crate::draw::to_color;
 
 use crate::game::{GameOptions, log};
@@ -19,7 +19,7 @@ mod scene;
 mod collisions;
 
 static mut CURRENT_SCENE: Option<Scene> = None;
-static mut COLL_GRAPH: Option<Rc<RefCell<DynamicBoundingVolumeTree<Shape>>>> = None;
+static mut COLL_GRAPH: Option<Rc<RefCell<DynamicBoundingVolumeTree<Collider>>>> = None;
 
 static mut GAME_OPTIONS: GameOptions = GameOptions { width: 512, height: 512, scale: 1, background_colour: 0 };
 static mut STARTED: bool = false;
@@ -27,9 +27,9 @@ static mut STARTED: bool = false;
 #[derive(Default)]
 pub struct GameState {
     add_objects: Vec<(usize, GameObject, Rc<RefCell<Transform>>)>,
-    add_colliders: Vec<(Shape, Rc<RefCell<usize>>)>,
+    add_colliders: Vec<(Collider, Rc<RefCell<usize>>)>,
     del_objects: Vec<usize>,
-    move_colliders: Vec<(usize, Shape)>,
+    move_colliders: Vec<(usize, Collider)>,
     collisions_this_frame: Vec<(usize, usize)>
 }
 

@@ -10,7 +10,7 @@ use web_sys::{Request, Response};
 use web_sys::console::log_1;
 
 use crate::{COLL_GRAPH, CURRENT_SCENE, GAME_OPTIONS, GameState, STARTED};
-use crate::collisions::Shape;
+use crate::collisions::Collider;
 use crate::events::EventSub;
 use crate::scene::{GameObject, Scene, Transform};
 
@@ -66,7 +66,7 @@ impl GloamWasm {
     }
 
     pub fn add_collider(&mut self, x: f32, y: f32, w: f32, h: f32) -> ColliderWasm {
-        let shape = Shape::new(x, y, w, h);
+        let shape = Collider::new(x, y, w, h);
         let collider = Rc::new(RefCell::new(0_usize));
         self.state.borrow_mut().add_colliders.push((shape, collider.clone()));
 
@@ -74,7 +74,7 @@ impl GloamWasm {
     }
 
     pub fn move_collider(&mut self, id: usize, x: f32, y: f32, w: f32, h: f32) {
-        self.state.borrow_mut().move_colliders.push((id, Shape::new(x, y, w, h)));
+        self.state.borrow_mut().move_colliders.push((id, Collider::new(x, y, w, h)));
     }
 
     pub fn collisions_for(&self, node_id: usize) -> Vec<usize> {
